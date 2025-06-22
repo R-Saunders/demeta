@@ -65,6 +65,9 @@ export default function Home() {
                   <li>WebP (.webp)</li>
                   <li>GIF (.gif)</li>
                   <li>PDF (.pdf)</li>
+                  <li>Word (.docx)</li>
+                  <li>Excel (.xlsx)</li>
+                  <li>PowerPoint (.pptx)</li>
                 </ul>
               </AccordionContent>
             </AccordionItem>
