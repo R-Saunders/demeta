@@ -60,19 +60,19 @@ export async function POST(request: NextRequest) {
           extractedMetadata[`${prefix} Frame Rate`] = stream.r_frame_rate;
         if (stream.bit_rate)
           extractedMetadata[`${prefix} Bitrate`] =
-            `${Math.round(parseInt(stream.bit_rate) / 1000)} kbps`;
+            `${Math.round(parseInt(String(stream.bit_rate)) / 1000)} kbps`;
       }
       if (stream.codec_type === 'audio') {
         if (stream.sample_rate)
           extractedMetadata[`${prefix} Sample Rate`] =
-            `${parseInt(stream.sample_rate) / 1000} kHz`;
+            `${parseInt(String(stream.sample_rate)) / 1000} kHz`;
         if (stream.channels)
           extractedMetadata[`${prefix} Channels`] = stream.channels;
         if (stream.channel_layout)
           extractedMetadata[`${prefix} Channel Layout`] = stream.channel_layout;
         if (stream.bit_rate)
           extractedMetadata[`${prefix} Bitrate`] =
-            `${Math.round(parseInt(stream.bit_rate) / 1000)} kbps`;
+            `${Math.round(parseInt(String(stream.bit_rate)) / 1000)} kbps`;
       }
     });
 
