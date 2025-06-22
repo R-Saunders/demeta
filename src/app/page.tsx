@@ -64,6 +64,7 @@ export default function Home() {
 									<li>HEIC (.heic)</li>
 									<li>WebP (.webp)</li>
 									<li>GIF (.gif)</li>
+									<li>PDF (.pdf)</li>
 								</ul>
 							</AccordionContent>
 						</AccordionItem>

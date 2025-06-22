@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, FC, DragEvent } from "react";
 import ExifReader from "exifreader";
+import { PDFDocument } from "pdf-lib";
 import {
 	FileUp,
 	ScanLine,
@@ -36,10 +37,12 @@ import { cn } from "@/lib/utils";
 
 type Metadata = Record<string, string>;
 type Step = "upload" | "review" | "download";
+type FileType = "image" | "pdf";
 
 export function MetadataScrubber() {
 	const [step, setStep] = useState<Step>("upload");
 	const [file, setFile] = useState<File | null>(null);
+	const [fileType, setFileType] = useState<FileType | null>(null);
 	const [metadata, setMetadata] = useState<Metadata | null>(null);
 	const [fieldsToScrub, setFieldsToScrub] = useState<string[]>([]);
 	const [isProcessing, setIsProcessing] = useState(false);
@@ -62,54 +65,107 @@ export function MetadataScrubber() {
 		setMetadata(null);
 
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 250));
-			setProgress(30);
-
-			const tags = await ExifReader.load(selectedFile);
-
-			setProgress(70);
-
-			delete tags["MakerNote"];
-			delete tags["UserComment"];
-			delete tags["thumbnail"];
-
-			const extractedMetadata: Metadata = {};
-			for (const tagName in tags) {
-				if (Object.prototype.hasOwnProperty.call(tags, tagName)) {
-					const tag = tags[tagName];
-					if (tag.description) {
-						extractedMetadata[tagName] = Array.isArray(tag.description)
-							? tag.description.join(", ")
-							: tag.description;
-					}
-				}
+			if (selectedFile.type.startsWith("image/")) {
+				setFileType("image");
+				await processImageFile(selectedFile);
+			} else if (selectedFile.type === "application/pdf") {
+				setFileType("pdf");
+				await processPdfFile(selectedFile);
+			} else {
+				throw new Error(
+					"Unsupported file type. Please upload a supported image or PDF file."
+				);
 			}
-
-			if (Object.keys(extractedMetadata).length === 0) {
-				extractedMetadata["Status"] =
-					"No readable EXIF metadata found. The file may not contain any, or it might not be a supported format.";
-			}
-
-			setMetadata(extractedMetadata);
-			setFieldsToScrub([]);
 
 			await new Promise((resolve) => setTimeout(resolve, 250));
 			setProgress(100);
 
 			await new Promise((resolve) => setTimeout(resolve, 500));
 			setStep("review");
-		} catch (error) {
-			console.error("Error reading metadata:", error);
+		} catch (error: any) {
+			console.error("Error processing file:", error);
 			toast({
-				title: "Error Reading File",
+				title: "Error Processing File",
 				description:
-					"Could not read metadata from this file. It may be corrupted or an unsupported file type.",
+					error.message ||
+					"Could not process this file. It may be corrupted or an unsupported file type.",
 				variant: "destructive",
 			});
 			startOver();
 		} finally {
 			setIsProcessing(false);
 		}
+	};
+
+	const processImageFile = async (selectedFile: File) => {
+		await new Promise((resolve) => setTimeout(resolve, 250));
+		setProgress(30);
+
+		const tags = await ExifReader.load(selectedFile);
+		setProgress(70);
+
+		delete tags["MakerNote"];
+		delete tags["UserComment"];
+		delete tags["thumbnail"];
+
+		const extractedMetadata: Metadata = {};
+		for (const tagName in tags) {
+			if (Object.prototype.hasOwnProperty.call(tags, tagName)) {
+				const tag = tags[tagName];
+				if (tag.description) {
+					extractedMetadata[tagName] = Array.isArray(tag.description)
+						? tag.description.join(", ")
+						: tag.description;
+				}
+			}
+		}
+
+		if (Object.keys(extractedMetadata).length === 0) {
+			extractedMetadata["Status"] =
+				"No readable EXIF metadata found. The file may not contain any, or it might not be a supported format.";
+		}
+
+		setMetadata(extractedMetadata);
+		setFieldsToScrub([]);
+	};
+
+	const processPdfFile = async (selectedFile: File) => {
+		await new Promise((resolve) => setTimeout(resolve, 250));
+		setProgress(30);
+
+		const fileBuffer = await selectedFile.arrayBuffer();
+		const pdfDoc = await PDFDocument.load(fileBuffer);
+
+		setProgress(70);
+
+		const extractedMetadata: Metadata = {};
+		const author = pdfDoc.getAuthor();
+		const creationDate = pdfDoc.getCreationDate();
+		const creator = pdfDoc.getCreator();
+		const keywords = pdfDoc.getKeywords();
+		const modificationDate = pdfDoc.getModificationDate();
+		const producer = pdfDoc.getProducer();
+		const subject = pdfDoc.getSubject();
+		const title = pdfDoc.getTitle();
+
+		if (author) extractedMetadata["Author"] = author;
+		if (creator) extractedMetadata["Creator"] = creator;
+		if (producer) extractedMetadata["Producer"] = producer;
+		if (subject) extractedMetadata["Subject"] = subject;
+		if (title) extractedMetadata["Title"] = title;
+		if (keywords) extractedMetadata["Keywords"] = keywords;
+		if (creationDate)
+			extractedMetadata["Creation Date"] = creationDate.toLocaleString();
+		if (modificationDate)
+			extractedMetadata["Modification Date"] =
+				modificationDate.toLocaleString();
+
+		if (Object.keys(extractedMetadata).length === 0) {
+			extractedMetadata["Status"] = "No readable metadata found in this PDF.";
+		}
+
+		setMetadata(extractedMetadata);
+		setFieldsToScrub([]);
 	};
 
 	const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -156,9 +212,18 @@ export function MetadataScrubber() {
 		setStep("download");
 	};
 
-	const downloadCleanedFile = () => {
+	const downloadCleanedFile = async () => {
 		if (!file) return;
 
+		if (fileType === "image") {
+			await downloadCleanedImage();
+		} else if (fileType === "pdf") {
+			await downloadCleanedPdf();
+		}
+	};
+
+	const downloadCleanedImage = () => {
+		if (!file) return;
 		const reader = new FileReader();
 
 		reader.onload = (event) => {
@@ -217,6 +282,45 @@ export function MetadataScrubber() {
 		};
 
 		reader.readAsDataURL(file);
+	};
+
+	const downloadCleanedPdf = async () => {
+		if (!file) return;
+
+		try {
+			const fileBuffer = await file.arrayBuffer();
+			const pdfDoc = await PDFDocument.load(fileBuffer);
+
+			if (fieldsToScrub.includes("Author")) pdfDoc.setAuthor("");
+			if (fieldsToScrub.includes("Creator")) pdfDoc.setCreator("");
+			if (fieldsToScrub.includes("Producer")) pdfDoc.setProducer("");
+			if (fieldsToScrub.includes("Subject")) pdfDoc.setSubject("");
+			if (fieldsToScrub.includes("Title")) pdfDoc.setTitle("");
+			if (fieldsToScrub.includes("Keywords")) pdfDoc.setKeywords([]);
+			if (fieldsToScrub.includes("Creation Date"))
+				pdfDoc.setCreationDate(new Date(0));
+			if (fieldsToScrub.includes("Modification Date"))
+				pdfDoc.setModificationDate(new Date());
+
+			const pdfBytes = await pdfDoc.save();
+
+			const blob = new Blob([pdfBytes], { type: "application/pdf" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `scrubbed-${file.name}`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error("Error scrubbing PDF:", error);
+			toast({
+				title: "PDF Scrubbing Failed",
+				description: "Could not process the PDF for scrubbing.",
+				variant: "destructive",
+			});
+		}
 	};
 
 	return (
@@ -314,7 +418,7 @@ const UploadStep: FC<{
 								or drag and drop
 							</p>
 							<p className="text-xs text-muted-foreground">
-								Supports JPEG, PNG, and TIFF files
+								Supports images and PDF files
 							</p>
 						</div>
 						<Input
@@ -323,7 +427,7 @@ const UploadStep: FC<{
 							className="hidden"
 							onChange={onFileChange}
 							disabled={isProcessing}
-							accept="image/jpeg, image/png, image/tiff"
+							accept="image/*,application/pdf"
 						/>
 					</label>
 				) : (
