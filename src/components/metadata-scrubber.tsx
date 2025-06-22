@@ -5,6 +5,7 @@ import ExifReader from 'exifreader';
 import { PDFDocument } from 'pdf-lib';
 import JSZip from 'jszip';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
+import * as music from 'music-metadata';
 import {
   FileUp,
   ScanLine,
@@ -39,7 +40,7 @@ import { cn } from '@/lib/utils';
 
 type Metadata = Record<string, string>;
 type Step = 'upload' | 'review' | 'download';
-type FileType = 'image' | 'pdf' | 'office';
+type FileType = 'image' | 'pdf' | 'office' | 'audio';
 
 // Define the structure for Office document metadata XML
 const xmlParserOptions = {
@@ -88,6 +89,9 @@ export function MetadataScrubber() {
       ) {
         setFileType('office');
         await processOfficeFile(selectedFile);
+      } else if (selectedFile.type.startsWith('audio/')) {
+        setFileType('audio');
+        await processAudioFile(selectedFile);
       } else {
         throw new Error(
           'Unsupported file type. Please upload a supported image, PDF, or Office document.'
@@ -237,6 +241,36 @@ export function MetadataScrubber() {
     setFieldsToScrub([]);
   };
 
+  const processAudioFile = async (selectedFile: File) => {
+    // New logic for audio files
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    setProgress(30);
+
+    const metadata = await music.parseBlob(selectedFile);
+    setProgress(70);
+
+    const extractedMetadata: Metadata = {};
+    if (metadata.common.title)
+      extractedMetadata['Title'] = metadata.common.title;
+    if (metadata.common.artist)
+      extractedMetadata['Artist'] = metadata.common.artist;
+    if (metadata.common.album)
+      extractedMetadata['Album'] = metadata.common.album;
+    if (metadata.common.year)
+      extractedMetadata['Year'] = metadata.common.year.toString();
+    if (metadata.common.track.no)
+      extractedMetadata['Track Number'] = metadata.common.track.no.toString();
+    if (metadata.common.genre)
+      extractedMetadata['Genre'] = metadata.common.genre.join(', ');
+
+    if (Object.keys(extractedMetadata).length === 0) {
+      extractedMetadata['Status'] = 'No readable metadata found in this file.';
+    }
+
+    setMetadata(extractedMetadata);
+    setFieldsToScrub([]);
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -290,6 +324,8 @@ export function MetadataScrubber() {
       await downloadCleanedPdf();
     } else if (fileType === 'office') {
       await downloadCleanedOfficeFile();
+    } else if (fileType === 'audio') {
+      await downloadCleanedAudioFile();
     }
   };
 
@@ -476,6 +512,59 @@ export function MetadataScrubber() {
     }
   };
 
+  const downloadCleanedAudioFile = async () => {
+    if (!file) return;
+
+    try {
+      let buffer = await file.arrayBuffer();
+
+      // Check for and remove ID3v2 tag (at the beginning of the file)
+      const view = new DataView(buffer);
+      if (
+        view.byteLength > 10 &&
+        view.getUint8(0) === 0x49 &&
+        view.getUint8(1) === 0x44 &&
+        view.getUint8(2) === 0x33
+      ) {
+        const tagSize =
+          (view.getUint8(6) << 21) |
+          (view.getUint8(7) << 14) |
+          (view.getUint8(8) << 7) |
+          view.getUint8(9);
+        const totalSize = 10 + tagSize;
+        buffer = buffer.slice(totalSize);
+      }
+
+      // Check for and remove ID3v1 tag (at the end of the file)
+      const viewEnd = new DataView(buffer);
+      if (
+        viewEnd.byteLength > 128 &&
+        viewEnd.getUint8(viewEnd.byteLength - 128) === 0x54 &&
+        viewEnd.getUint8(viewEnd.byteLength - 127) === 0x41 &&
+        viewEnd.getUint8(viewEnd.byteLength - 126) === 0x47
+      ) {
+        buffer = buffer.slice(0, buffer.byteLength - 128);
+      }
+
+      const blob = new Blob([buffer], { type: file.type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scrubbed-${file.name}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error scrubbing audio file:', error);
+      toast({
+        title: 'Audio File Scrubbing Failed',
+        description: 'Could not process the audio file for scrubbing.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="relative">
       {step === 'upload' && (
@@ -571,7 +660,7 @@ const UploadStep: FC<{
                 or drag and drop
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports images, PDF, and Office documents
+                Supports images, PDF, Office, and audio files
               </p>
             </div>
             <Input
@@ -580,7 +669,7 @@ const UploadStep: FC<{
               className="hidden"
               onChange={onFileChange}
               disabled={isProcessing}
-              accept="image/*,application/pdf,.docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+              accept="image/*,application/pdf,.docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,audio/*"
             />
           </label>
         ) : (
