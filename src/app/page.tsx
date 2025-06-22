@@ -53,9 +53,8 @@ export default function Home() {
               </AccordionTrigger>
               <AccordionContent className="text-base text-muted-foreground pt-4">
                 <p>
-                  This tool uses the powerful ExifReader library and supports a
-                  wide range of image formats. You can upload and scrub metadata
-                  from the following file types:
+                  This tool supports a wide range of file formats. You can
+                  upload and scrub metadata from the following file types:
                 </p>
                 <ul className="list-disc list-inside grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                   <li>JPEG (.jpg, .jpeg)</li>
@@ -68,6 +67,9 @@ export default function Home() {
                   <li>Word (.docx)</li>
                   <li>Excel (.xlsx)</li>
                   <li>PowerPoint (.pptx)</li>
+                  <li>MP3 (.mp3)</li>
+                  <li>FLAC (.flac)</li>
+                  <li>WAV (.wav)</li>
                 </ul>
               </AccordionContent>
             </AccordionItem>

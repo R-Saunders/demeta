@@ -9,6 +9,9 @@ A Next.js application that helps you protect your privacy by removing metadata f
 - Download cleaned images with metadata scrubbed
 - Modern, responsive UI built with Tailwind CSS and Radix UI
 - Support for various image formats
+- **PDFs**: Scrubs common metadata fields like Author, Creator, and modification dates.
+- **Modern Office Documents**: Handles `.docx`, `.xlsx`, and `.pptx` files, removing core properties like author and company, and resetting revision numbers.
+- **Audio Files**: Reads metadata from common audio formats and scrubs ID3 tags from `.mp3` files.
 
 ## Prerequisites
 
@@ -97,3 +100,45 @@ src/
 ## License
 
 This project is licensed under the MIT License.
+
+## How It Works
+
+The application uses a combination of client-side libraries to perform all processing directly in your browser. No files are ever uploaded to a server, ensuring your privacy.
+
+1.  **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
+2.  **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
+3.  **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
+4.  **Audio Metadata**: Uses `music-metadata-browser` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
+
+## Setup & Run Locally
+
+To get started with the Metadata Scrubber locally, follow these steps:
+
+1.  **Clone the repository:**
+
+```bash
+git clone <repository-url>
+cd metadata-scrubber
+```
+
+2.  **Install dependencies:**
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3.  **Run the development server:**
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000).
+
+4.  **Open your browser:**
+
+Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
