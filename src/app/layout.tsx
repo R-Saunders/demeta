@@ -1,28 +1,36 @@
-import type {Metadata} from 'next';
-import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import type { Metadata } from "next";
+import { Inter as FontSans } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+
+import { cn } from "@/lib/utils";
+
+const fontSans = FontSans({
+	subsets: ["latin"],
+	variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
-  title: 'MetadataScrub',
-  description: 'Scrub metadata from files to protect your privacy.',
+	title: "Create Next App",
+	description: "Scrub metadata from files to protect your privacy.",
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" className="dark">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
-        {children}
-        <Toaster />
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<body
+				className={cn(
+					"min-h-screen bg-background font-sans antialiased",
+					fontSans.variable
+				)}
+			>
+				{children}
+				<Toaster />
+			</body>
+		</html>
+	);
 }

@@ -297,8 +297,8 @@ const UploadStep: FC<{
 					<FileUp className="text-primary" /> 1. Upload Your File
 				</CardTitle>
 				<CardDescription>
-					Select a file from your device. We'll extract the metadata for you to
-					review.
+					Select a file from your device. We&apos;ll extract the metadata for
+					you to review.
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -468,14 +468,13 @@ const DownloadStep: FC<{
 	onStartOver: () => void;
 }> = ({ fileName, onDownload, onStartOver }) => (
 	<Card className="w-full animate-in fade-in-50 duration-500">
-		<CardHeader className="items-center text-center">
-			<div className="p-4 bg-accent/20 rounded-full inline-block border border-accent/30">
-				<ShieldCheck className="h-12 w-12 text-accent" />
-			</div>
-			<CardTitle className="text-2xl mt-4">Scrubbing Complete!</CardTitle>
+		<CardHeader>
+			<CardTitle className="flex items-center gap-2">
+				<Download className="text-primary" /> 3. Download Your Cleaned File
+			</CardTitle>
 			<CardDescription>
-				Your file <span className="font-semibold text-primary">{fileName}</span>{" "}
-				has been cleaned.
+				We&apos;ve scrubbed the selected metadata from{" "}
+				<span className="font-semibold text-primary">{fileName}</span>.
 			</CardDescription>
 		</CardHeader>
 		<CardContent className="text-center">
