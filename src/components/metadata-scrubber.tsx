@@ -1,0 +1,327 @@
+"use client";
+
+import { useState, ChangeEvent, FC } from "react";
+import ExifReader from "exifreader";
+import { FileUp, ScanLine, ShieldCheck, Download, Trash2, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+
+type Metadata = Record<string, string>;
+type Step = "upload" | "review" | "download";
+
+export function MetadataScrubber() {
+  const [step, setStep] = useState<Step>("upload");
+  const [file, setFile] = useState<File | null>(null);
+  const [metadata, setMetadata] = useState<Metadata | null>(null);
+  const [fieldsToScrub, setFieldsToScrub] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
+
+  const startOver = () => {
+    setStep("upload");
+    setFile(null);
+    setMetadata(null);
+    setFieldsToScrub([]);
+    setIsProcessing(false);
+    setProgress(0);
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setIsProcessing(true);
+      setProgress(0);
+      setMetadata(null);
+
+      try {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        setProgress(30);
+
+        const tags = await ExifReader.load(selectedFile);
+
+        setProgress(70);
+
+        delete tags['MakerNote'];
+        delete tags['UserComment'];
+        delete tags['thumbnail'];
+
+        const extractedMetadata: Metadata = {};
+        for (const tagName in tags) {
+          if (Object.prototype.hasOwnProperty.call(tags, tagName)) {
+            const tag = tags[tagName];
+            if (tag.description) {
+              extractedMetadata[tagName] = Array.isArray(tag.description) ? tag.description.join(', ') : tag.description;
+            }
+          }
+        }
+
+        if (Object.keys(extractedMetadata).length === 0) {
+            extractedMetadata['Status'] = 'No readable EXIF metadata found. The file may not contain any, or it might not be a supported format.';
+        }
+
+        setMetadata(extractedMetadata);
+        setFieldsToScrub([]);
+        
+        await new Promise(resolve => setTimeout(resolve, 250));
+        setProgress(100);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setStep("review");
+      } catch (error) {
+        console.error("Error reading metadata:", error);
+        toast({
+          title: "Error Reading File",
+          description: "Could not read metadata from this file. It may be corrupted or an unsupported file type.",
+          variant: "destructive",
+        });
+        startOver();
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  const handleScrubSelectionChange = (field: string, checked: boolean | "indeterminate") => {
+    setFieldsToScrub(prev => {
+      if (checked) {
+        return [...prev, field];
+      } else {
+        return prev.filter(f => f !== field);
+      }
+    });
+  };
+
+  const handleSelectAll = (checked: boolean | "indeterminate") => {
+    if (checked && metadata) {
+      setFieldsToScrub(Object.keys(metadata));
+    } else {
+      setFieldsToScrub([]);
+    }
+  };
+
+  const scrubMetadata = async () => {
+    setIsProcessing(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsProcessing(false);
+    setStep("download");
+  };
+  
+  const downloadCleanedFile = () => {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          toast({
+            title: "Download Failed",
+            description: "Could not process the image for download.",
+            variant: "destructive",
+          });
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `scrubbed-${file.name}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } else {
+             toast({
+                title: "Download Failed",
+                description: "Failed to create a scrubbed version of the image.",
+                variant: "destructive",
+            });
+          }
+        }, file.type || 'image/jpeg');
+      };
+      img.onerror = () => {
+        toast({
+            title: "Image Load Failed",
+            description: "Could not load the image to process it.",
+            variant: "destructive",
+        });
+      };
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      }
+    };
+    
+    reader.onerror = () => {
+        toast({
+            title: "Error Reading File",
+            description: "Could not read the file for scrubbing.",
+            variant: "destructive",
+        });
+    };
+
+    reader.readAsDataURL(file);
+  };
+  
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-4xl mx-auto">
+        <header className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-bold font-headline">MetadataScrub</h1>
+          <p className="text-muted-foreground mt-2 text-lg">Protect your privacy by removing metadata from your files.</p>
+        </header>
+
+        <div className="relative">
+          {step === "upload" && <UploadStep onFileChange={handleFileChange} isProcessing={isProcessing} progress={progress} />}
+          {step === "review" && file && metadata && <ReviewStep fileName={file.name} metadata={metadata} fieldsToScrub={fieldsToScrub} onScrubSelectionChange={handleScrubSelectionChange} onSelectAll={handleSelectAll} onScrub={scrubMetadata} isProcessing={isProcessing} onCancel={startOver} />}
+          {step === "download" && file && <DownloadStep fileName={file.name} onDownload={downloadCleanedFile} onStartOver={startOver} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const UploadStep: FC<{onFileChange: (e: ChangeEvent<HTMLInputElement>) => void; isProcessing: boolean; progress: number}> = ({ onFileChange, isProcessing, progress }) => (
+  <Card className="w-full animate-in fade-in-50 duration-500">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2"><FileUp className="text-primary"/> 1. Upload Your File</CardTitle>
+      <CardDescription>Select a file from your device. We'll extract the metadata for you to review.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      {!isProcessing ? (
+        <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted transition-colors">
+          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+            <FileUp className="w-10 h-10 mb-3 text-muted-foreground" />
+            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold text-primary">Click to upload</span> or drag and drop</p>
+            <p className="text-xs text-muted-foreground">Supports images, documents, PDFs, etc.</p>
+          </div>
+          <Input id="file-upload" type="file" className="hidden" onChange={onFileChange} disabled={isProcessing} accept="image/jpeg, image/png, image/tiff" />
+        </label>
+      ) : (
+        <div className="h-64 flex flex-col items-center justify-center">
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <p className="mt-4 text-muted-foreground">Analyzing file...</p>
+            <Progress value={progress} className="w-4/5 mt-2" />
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const ReviewStep: FC<{
+  fileName: string;
+  metadata: Metadata;
+  fieldsToScrub: string[];
+  onScrubSelectionChange: (field: string, checked: boolean | "indeterminate") => void;
+  onSelectAll: (checked: boolean | "indeterminate") => void;
+  onScrub: () => void;
+  isProcessing: boolean;
+  onCancel: () => void;
+}> = ({ fileName, metadata, fieldsToScrub, onScrubSelectionChange, onSelectAll, onScrub, isProcessing, onCancel }) => {
+  const allSelected = metadata && Object.keys(metadata).length > 0 && fieldsToScrub.length === Object.keys(metadata).length;
+  const isIndeterminate = fieldsToScrub.length > 0 && !allSelected;
+  
+  return (
+    <Card className="w-full animate-in fade-in-50 duration-500">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><ScanLine className="text-primary"/> 2. Review & Scrub Metadata</CardTitle>
+        <CardDescription>
+          Review extracted metadata for <span className="font-semibold text-primary">{fileName}</span>. 
+          Select the fields you wish to remove.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg max-h-96 overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox onCheckedChange={onSelectAll} checked={isIndeterminate ? "indeterminate" : allSelected} aria-label="Select all rows"/>
+                </TableHead>
+                <TableHead className="w-1/3">Field</TableHead>
+                <TableHead>Value</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Object.entries(metadata).map(([key, value]) => {
+                return (
+                  <TableRow key={key} data-state={fieldsToScrub.includes(key) ? "selected" : ""}>
+                    <TableCell>
+                      <Checkbox checked={fieldsToScrub.includes(key)} onCheckedChange={(checked) => onScrubSelectionChange(key, checked)} />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{key}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs break-all">{value}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between flex-wrap gap-4">
+        <Button variant="ghost" onClick={onCancel} disabled={isProcessing}>Cancel</Button>
+        <Button onClick={onScrub} disabled={isProcessing || fieldsToScrub.length === 0} size="lg">
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Scrubbing...
+            </>
+          ) : (
+            <>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Scrub {fieldsToScrub.length} field(s)
+            </>
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+const DownloadStep: FC<{
+  fileName: string;
+  onDownload: () => void;
+  onStartOver: () => void;
+}> = ({ fileName, onDownload, onStartOver }) => (
+  <Card className="w-full animate-in fade-in-50 duration-500">
+    <CardHeader className="items-center text-center">
+      <div className="p-4 bg-accent/20 rounded-full inline-block border border-accent/30">
+        <ShieldCheck className="h-12 w-12 text-accent"/>
+      </div>
+      <CardTitle className="text-2xl mt-4">Scrubbing Complete!</CardTitle>
+      <CardDescription>
+        Your file <span className="font-semibold text-primary">{fileName}</span> has been cleaned.
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="text-center">
+      <p className="text-muted-foreground mb-6">
+        Download the new, privacy-safe version of your file.
+      </p>
+      <div className="flex gap-4 justify-center">
+        <Button size="lg" variant="outline" onClick={onStartOver}>Start Over</Button>
+        <Button size="lg" onClick={onDownload} className="bg-primary hover:bg-primary/90">
+          <Download className="mr-2 h-5 w-5"/>
+          Download Cleaned File
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
