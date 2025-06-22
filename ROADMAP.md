@@ -6,10 +6,12 @@ This document outlines the strategic roadmap and potential future features for t
 
 - **Add Video File Support**:
   - ✅ **Basic video file detection and UI support implemented**
+  - ✅ **Browser-based video metadata extraction implemented**
   - 🔄 **In Progress**: Research and implement metadata scrubbing for common video containers like `.mp4`, `.mov`, and `.mkv`.
   - This involves handling various metadata streams (video, audio, subtitles) and complex container structures (`moov` atoms in MP4/MOV, etc.).
   - The goal is to remove data like creation date, GPS coordinates, and device information without re-encoding the video.
-  - **Next Steps**: Install and integrate `fast-video-metadata` library for proper metadata extraction and scrubbing.
+  - **Current Status**: Browser-based extraction provides basic video properties (width, height, duration). Full metadata scrubbing requires server-side processing due to browser security limitations.
+  - **Next Steps**: Implement server-side video metadata processing API or explore WebAssembly-based solutions for client-side video metadata manipulation.
 
 ## Medium Priority
 

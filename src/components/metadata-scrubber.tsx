@@ -6,7 +6,6 @@ import { PDFDocument } from 'pdf-lib';
 import JSZip from 'jszip';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import * as music from 'music-metadata';
-import { read } from 'fast-video-metadata';
 import {
   FileUp,
   ScanLine,
@@ -276,19 +275,11 @@ export function MetadataScrubber() {
   };
 
   const processVideoFile = async (selectedFile: File) => {
-    // Video file processing with fast-video-metadata
+    // Browser-based video file processing
     await new Promise((resolve) => setTimeout(resolve, 250));
     setProgress(30);
 
     try {
-      // Convert File to a format that fast-video-metadata can read
-      // The library expects a file path, but we have a File object
-      // We'll need to create a temporary file or use a different approach
-      const fileBuffer = await selectedFile.arrayBuffer();
-      setProgress(50);
-
-      // For now, we'll extract basic file information and indicate that
-      // full video metadata extraction requires server-side processing
       const extractedMetadata: Metadata = {};
 
       // Basic file information
@@ -300,23 +291,69 @@ export function MetadataScrubber() {
         selectedFile.lastModified
       ).toLocaleString();
 
-      // Video-specific information
-      extractedMetadata['Video Support'] =
-        'Video metadata extraction is now available!';
-      extractedMetadata['Status'] =
-        'Video file detected. Full metadata extraction requires server-side processing for security reasons.';
-      extractedMetadata['Note'] =
-        'The fast-video-metadata library has been installed and is ready for integration.';
+      // Try to extract video metadata using HTML5 video element
+      const videoUrl = URL.createObjectURL(selectedFile);
+      const video = document.createElement('video');
+
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Video metadata extraction timed out'));
+        }, 10000); // 10 second timeout
+
+        video.onloadedmetadata = () => {
+          clearTimeout(timeout);
+
+          // Extract available video metadata
+          if (video.videoWidth)
+            extractedMetadata['Video Width'] = `${video.videoWidth}px`;
+          if (video.videoHeight)
+            extractedMetadata['Video Height'] = `${video.videoHeight}px`;
+          if (video.duration)
+            extractedMetadata['Duration'] = `${Math.round(video.duration)}s`;
+
+          // Try to get more detailed metadata
+          if (video.readyState >= 1) {
+            extractedMetadata['Ready State'] = `Ready (${video.readyState})`;
+          }
+
+          URL.revokeObjectURL(videoUrl);
+          resolve();
+        };
+
+        video.onerror = () => {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(videoUrl);
+          reject(new Error('Could not load video for metadata extraction'));
+        };
+
+        video.src = videoUrl;
+        video.load();
+      });
 
       setProgress(70);
+
+      // Add video-specific information
+      extractedMetadata['Video Support'] =
+        'Browser-based video metadata extraction active!';
+      extractedMetadata['Status'] =
+        'Video metadata extracted using HTML5 video element.';
+      extractedMetadata['Note'] =
+        'This extracts basic video properties. For detailed metadata like GPS, camera info, etc., server-side processing would be required.';
+
       setMetadata(extractedMetadata);
       setFieldsToScrub([]);
     } catch (error) {
       console.error('Error processing video file:', error);
       const extractedMetadata: Metadata = {};
-      extractedMetadata['Error'] = 'Could not process video metadata';
+      extractedMetadata['File Name'] = selectedFile.name;
+      extractedMetadata['File Size'] =
+        `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
+      extractedMetadata['File Type'] = selectedFile.type;
+      extractedMetadata['Error'] = 'Could not extract video metadata';
       extractedMetadata['Details'] =
         error instanceof Error ? error.message : 'Unknown error';
+      extractedMetadata['Status'] =
+        'Basic file information available. Video metadata extraction failed.';
       setMetadata(extractedMetadata);
       setFieldsToScrub([]);
     }
@@ -619,12 +656,12 @@ export function MetadataScrubber() {
   };
 
   const downloadCleanedVideoFile = async () => {
-    // Placeholder for video file scrubbing
+    // Video file scrubbing - currently limited to basic operations
     if (!file) return;
 
     try {
-      // For now, just download the original file
-      // TODO: Implement proper video metadata scrubbing
+      // For now, we can only provide the original file
+      // TODO: Implement proper video metadata scrubbing using server-side processing
       const url = URL.createObjectURL(file);
       const a = document.createElement('a');
       a.href = url;
@@ -637,13 +674,13 @@ export function MetadataScrubber() {
       toast({
         title: 'Video File Downloaded',
         description:
-          'Video metadata scrubbing is coming soon. The original file has been downloaded.',
+          'Video metadata scrubbing requires server-side processing for full functionality. The original file has been downloaded.',
       });
     } catch (error) {
       console.error('Error processing video file:', error);
       toast({
         title: 'Video File Processing Failed',
-        description: 'Could not process the video file.',
+        description: 'Could not process the video file for download.',
         variant: 'destructive',
       });
     }
