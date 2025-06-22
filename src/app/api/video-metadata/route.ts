@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (metadata.format.duration) {
       extractedMetadata['Duration'] = new Date(
-        parseFloat(metadata.format.duration) * 1000
+        parseFloat(String(metadata.format.duration)) * 1000
       )
         .toISOString()
         .substr(11, 8);
