@@ -275,14 +275,42 @@ export function MetadataScrubber() {
   };
 
   const processVideoFile = async (selectedFile: File) => {
-    // Browser-based video file processing
+    // Server-side video file processing
     await new Promise((resolve) => setTimeout(resolve, 250));
     setProgress(30);
 
     try {
-      const extractedMetadata: Metadata = {};
+      // Create FormData to send to server
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-      // Basic file information
+      setProgress(50);
+
+      // Call the server API
+      const response = await fetch('/api/video-metadata', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process video metadata');
+      }
+
+      const data = await response.json();
+      setProgress(70);
+
+      if (data.success && data.metadata) {
+        setMetadata(data.metadata);
+        setFieldsToScrub([]);
+      } else {
+        throw new Error('No metadata returned from server');
+      }
+    } catch (error) {
+      console.error('Error processing video file:', error);
+
+      // Fallback to basic file information if server processing fails
+      const extractedMetadata: Metadata = {};
       extractedMetadata['File Name'] = selectedFile.name;
       extractedMetadata['File Size'] =
         `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
@@ -290,70 +318,13 @@ export function MetadataScrubber() {
       extractedMetadata['Last Modified'] = new Date(
         selectedFile.lastModified
       ).toLocaleString();
-
-      // Try to extract video metadata using HTML5 video element
-      const videoUrl = URL.createObjectURL(selectedFile);
-      const video = document.createElement('video');
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Video metadata extraction timed out'));
-        }, 10000); // 10 second timeout
-
-        video.onloadedmetadata = () => {
-          clearTimeout(timeout);
-
-          // Extract available video metadata
-          if (video.videoWidth)
-            extractedMetadata['Video Width'] = `${video.videoWidth}px`;
-          if (video.videoHeight)
-            extractedMetadata['Video Height'] = `${video.videoHeight}px`;
-          if (video.duration)
-            extractedMetadata['Duration'] = `${Math.round(video.duration)}s`;
-
-          // Try to get more detailed metadata
-          if (video.readyState >= 1) {
-            extractedMetadata['Ready State'] = `Ready (${video.readyState})`;
-          }
-
-          URL.revokeObjectURL(videoUrl);
-          resolve();
-        };
-
-        video.onerror = () => {
-          clearTimeout(timeout);
-          URL.revokeObjectURL(videoUrl);
-          reject(new Error('Could not load video for metadata extraction'));
-        };
-
-        video.src = videoUrl;
-        video.load();
-      });
-
-      setProgress(70);
-
-      // Add video-specific information
-      extractedMetadata['Video Support'] =
-        'Browser-based video metadata extraction active!';
-      extractedMetadata['Status'] =
-        'Video metadata extracted using HTML5 video element.';
-      extractedMetadata['Note'] =
-        'This extracts basic video properties. For detailed metadata like GPS, camera info, etc., server-side processing would be required.';
-
-      setMetadata(extractedMetadata);
-      setFieldsToScrub([]);
-    } catch (error) {
-      console.error('Error processing video file:', error);
-      const extractedMetadata: Metadata = {};
-      extractedMetadata['File Name'] = selectedFile.name;
-      extractedMetadata['File Size'] =
-        `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
-      extractedMetadata['File Type'] = selectedFile.type;
-      extractedMetadata['Error'] = 'Could not extract video metadata';
+      extractedMetadata['Error'] =
+        'Server-side video metadata extraction failed';
       extractedMetadata['Details'] =
         error instanceof Error ? error.message : 'Unknown error';
       extractedMetadata['Status'] =
-        'Basic file information available. Video metadata extraction failed.';
+        'Basic file information available. Server processing failed.';
+
       setMetadata(extractedMetadata);
       setFieldsToScrub([]);
     }
@@ -656,13 +627,31 @@ export function MetadataScrubber() {
   };
 
   const downloadCleanedVideoFile = async () => {
-    // Video file scrubbing - currently limited to basic operations
+    // Server-side video file scrubbing
     if (!file) return;
 
     try {
-      // For now, we can only provide the original file
-      // TODO: Implement proper video metadata scrubbing using server-side processing
-      const url = URL.createObjectURL(file);
+      // Create FormData to send to server
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fieldsToScrub', JSON.stringify(fieldsToScrub));
+
+      // Call the server API for scrubbing
+      const response = await fetch('/api/video-scrub', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to scrub video metadata');
+      }
+
+      // Get the scrubbed file as blob
+      const scrubbedBlob = await response.blob();
+
+      // Create download link
+      const url = URL.createObjectURL(scrubbedBlob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `scrubbed-${file.name}`;
@@ -672,15 +661,18 @@ export function MetadataScrubber() {
       URL.revokeObjectURL(url);
 
       toast({
-        title: 'Video File Downloaded',
+        title: 'Video File Scrubbed and Downloaded',
         description:
-          'Video metadata scrubbing requires server-side processing for full functionality. The original file has been downloaded.',
+          'Video metadata has been processed and the cleaned file has been downloaded.',
       });
     } catch (error) {
-      console.error('Error processing video file:', error);
+      console.error('Error scrubbing video file:', error);
       toast({
-        title: 'Video File Processing Failed',
-        description: 'Could not process the video file for download.',
+        title: 'Video File Scrubbing Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not scrub the video file.',
         variant: 'destructive',
       });
     }

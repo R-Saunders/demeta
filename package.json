@@ -38,6 +38,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "exifreader": "^4.23.0",
+    "fast-video-metadata": "^3.1.0",
     "fast-xml-parser": "^4.4.0",
     "firebase": "^11.9.1",
     "jszip": "^3.10.1",
