@@ -369,9 +369,15 @@ export function MetadataScrubber() {
 
   const scrubMetadata = async () => {
     setIsProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await downloadCleanedFile();
     setIsProcessing(false);
-    setStep('download');
+    setStep('upload'); // Go back to the beginning after download
+    // Reset file state after a delay to allow for the next upload
+    setTimeout(() => {
+      setFile(null);
+      setMetadata(null);
+      setFieldsToScrub([]);
+    }, 500);
   };
 
   const downloadCleanedFile = async () => {
@@ -715,13 +721,6 @@ export function MetadataScrubber() {
           onCancel={startOver}
         />
       )}
-      {step === 'download' && file && (
-        <DownloadStep
-          fileName={file.name}
-          onDownload={downloadCleanedFile}
-          onStartOver={startOver}
-        />
-      )}
     </div>
   );
 }
@@ -909,37 +908,3 @@ const ReviewStep: FC<{
     </Card>
   );
 };
-
-const DownloadStep: FC<{
-  fileName: string;
-  onDownload: () => void;
-  onStartOver: () => void;
-}> = ({ fileName, onDownload, onStartOver }) => (
-  <Card className="w-full animate-in fade-in-50 duration-500">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Download className="text-primary" /> 3. Download Your Cleaned File
-      </CardTitle>
-      <CardDescription>
-        We&apos;ve scrubbed the selected metadata from{' '}
-        <span className="font-semibold text-primary">{fileName}</span>.
-      </CardDescription>
-    </CardHeader>
-    <CardContent className="text-center">
-      <div className="flex flex-col items-center gap-4">
-        <p className="text-muted-foreground">
-          Your file is ready to be downloaded.
-        </p>
-        <Button onClick={onDownload} size="lg">
-          <Download className="mr-2 h-5 w-5" />
-          Download Now
-        </Button>
-      </div>
-    </CardContent>
-    <CardFooter className="mt-6 flex justify-center">
-      <Button variant="link" onClick={onStartOver}>
-        Start Over With a New File
-      </Button>
-    </CardFooter>
-  </Card>
-);

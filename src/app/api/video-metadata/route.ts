@@ -1,59 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, unlink, readFile } from 'fs/promises';
+import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+
+// Set the path for the ffmpeg and ffprobe binaries
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 export async function POST(request: NextRequest) {
-  console.log('Video metadata API called');
+  const formData = await request.formData();
+  const file = formData.get('file') as File;
+
+  if (!file) {
+    return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+  }
+
+  const tempFilePath = join(tmpdir(), `video-${Date.now()}-${file.name}`);
 
   try {
-    const formData = await request.formData();
-    console.log('FormData received');
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(tempFilePath, buffer);
 
-    const file = formData.get('file') as File;
+    const metadata = await new Promise<ffmpeg.FfprobeData>(
+      (resolve, reject) => {
+        ffmpeg.ffprobe(tempFilePath, (err, data) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(data);
+        });
+      }
+    );
 
-    console.log('File info:', {
-      name: file?.name,
-      size: file?.size,
-      type: file?.type,
-    });
-
-    if (!file) {
-      console.log('No file provided');
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    }
-
-    // Check if it's a video file
-    if (!file.type.startsWith('video/')) {
-      console.log('File is not a video:', file.type);
-      return NextResponse.json(
-        { error: 'File is not a video' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Processing video file...');
-
-    // For now, just return basic file information
-    // TODO: Re-implement fast-video-metadata integration
     const extractedMetadata: Record<string, any> = {};
 
-    // Basic file information
-    extractedMetadata['File Name'] = file.name;
-    extractedMetadata['File Size'] =
-      `${(file.size / 1024 / 1024).toFixed(2)} MB`;
-    extractedMetadata['File Type'] = file.type;
-    extractedMetadata['Last Modified'] = new Date(
-      file.lastModified
-    ).toLocaleString();
+    if (metadata.format && metadata.format.tags) {
+      for (const [key, value] of Object.entries(metadata.format.tags)) {
+        const formattedKey = key
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        extractedMetadata[formattedKey] = value;
+      }
+    }
 
-    // Video-specific information
-    extractedMetadata['Video Support'] = 'Server-side video processing active!';
-    extractedMetadata['Status'] = 'Video file processed successfully.';
-    extractedMetadata['Note'] =
-      'Basic metadata extraction working. Advanced metadata extraction will be re-enabled soon.';
+    metadata.streams.forEach((stream, index) => {
+      const prefix = stream.codec_type === 'video' ? 'Video' : 'Audio';
+      if (stream.codec_name)
+        extractedMetadata[`${prefix} Codec`] = stream.codec_name;
 
-    console.log('Returning metadata:', extractedMetadata);
+      if (stream.codec_type === 'video') {
+        if (stream.width && stream.height)
+          extractedMetadata[`${prefix} Dimensions`] =
+            `${stream.width}x${stream.height}`;
+        if (stream.r_frame_rate)
+          extractedMetadata[`${prefix} Frame Rate`] = stream.r_frame_rate;
+        if (stream.bit_rate)
+          extractedMetadata[`${prefix} Bitrate`] =
+            `${Math.round(parseInt(stream.bit_rate) / 1000)} kbps`;
+      }
+      if (stream.codec_type === 'audio') {
+        if (stream.sample_rate)
+          extractedMetadata[`${prefix} Sample Rate`] =
+            `${parseInt(stream.sample_rate) / 1000} kHz`;
+        if (stream.channels)
+          extractedMetadata[`${prefix} Channels`] = stream.channels;
+        if (stream.channel_layout)
+          extractedMetadata[`${prefix} Channel Layout`] = stream.channel_layout;
+        if (stream.bit_rate)
+          extractedMetadata[`${prefix} Bitrate`] =
+            `${Math.round(parseInt(stream.bit_rate) / 1000)} kbps`;
+      }
+    });
+
+    if (metadata.format.duration) {
+      extractedMetadata['Duration'] = new Date(
+        parseFloat(metadata.format.duration) * 1000
+      )
+        .toISOString()
+        .substr(11, 8);
+    }
 
     return NextResponse.json({
       success: true,
@@ -63,10 +92,14 @@ export async function POST(request: NextRequest) {
     console.error('Error processing video metadata:', error);
     return NextResponse.json(
       {
-        error: 'Failed to process video metadata',
+        error: 'Failed to process video metadata with ffprobe',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
+    );
+  } finally {
+    await unlink(tempFilePath).catch((err) =>
+      console.error(`Failed to delete temp file: ${tempFilePath}`, err)
     );
   }
 }
