@@ -114,3 +114,7 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+
+# Additional files to ignore
+.idx/
+.modified
