@@ -10,8 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --check .",
-    "formatter": "prettier --write .",
-    "debug": "echo 'Node version:' && node --version && echo 'NPM version:' && npm --version && echo 'Prettier version:' && npx prettier --version && echo 'Prettier config:' && cat .prettierrc.json"
+    "formatter": "prettier --write ."
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
