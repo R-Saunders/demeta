@@ -3,6 +3,8 @@
 import { useState, ChangeEvent, FC, DragEvent } from 'react';
 import ExifReader from 'exifreader';
 import { PDFDocument } from 'pdf-lib';
+import JSZip from 'jszip';
+import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import {
   FileUp,
   ScanLine,
@@ -37,7 +39,13 @@ import { cn } from '@/lib/utils';
 
 type Metadata = Record<string, string>;
 type Step = 'upload' | 'review' | 'download';
-type FileType = 'image' | 'pdf';
+type FileType = 'image' | 'pdf' | 'office';
+
+// Define the structure for Office document metadata XML
+const xmlParserOptions = {
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_',
+};
 
 export function MetadataScrubber() {
   const [step, setStep] = useState<Step>('upload');
@@ -71,9 +79,18 @@ export function MetadataScrubber() {
       } else if (selectedFile.type === 'application/pdf') {
         setFileType('pdf');
         await processPdfFile(selectedFile);
+      } else if (
+        [
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ].includes(selectedFile.type)
+      ) {
+        setFileType('office');
+        await processOfficeFile(selectedFile);
       } else {
         throw new Error(
-          'Unsupported file type. Please upload a supported image or PDF file.'
+          'Unsupported file type. Please upload a supported image, PDF, or Office document.'
         );
       }
 
@@ -168,6 +185,58 @@ export function MetadataScrubber() {
     setFieldsToScrub([]);
   };
 
+  const processOfficeFile = async (selectedFile: File) => {
+    // New logic for Office files
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    setProgress(30);
+
+    const fileBuffer = await selectedFile.arrayBuffer();
+    const zip = await JSZip.loadAsync(fileBuffer);
+    const coreXmlFile = zip.file('docProps/core.xml');
+    const appXmlFile = zip.file('docProps/app.xml');
+
+    setProgress(70);
+    const extractedMetadata: Metadata = {};
+
+    if (coreXmlFile) {
+      const coreXmlText = await coreXmlFile.async('text');
+      const parser = new XMLParser(xmlParserOptions);
+      const coreXml = parser.parse(coreXmlText);
+      const props = coreXml['cp:coreProperties'];
+
+      if (props['dc:creator'])
+        extractedMetadata['Author'] = props['dc:creator'];
+      if (props['cp:lastModifiedBy'])
+        extractedMetadata['Last Modified By'] = props['cp:lastModifiedBy'];
+      if (props['cp:revision'])
+        extractedMetadata['Revision'] = props['cp:revision'];
+      if (props['dcterms:created'])
+        extractedMetadata['Creation Date'] = new Date(
+          props['dcterms:created']['#text']
+        ).toLocaleString();
+      if (props['dcterms:modified'])
+        extractedMetadata['Modification Date'] = new Date(
+          props['dcterms:modified']['#text']
+        ).toLocaleString();
+    }
+
+    if (appXmlFile) {
+      const appXmlText = await appXmlFile.async('text');
+      const parser = new XMLParser(xmlParserOptions);
+      const appXml = parser.parse(appXmlText);
+      const props = appXml['Properties'];
+
+      if (props['Company']) extractedMetadata['Company'] = props['Company'];
+    }
+
+    if (Object.keys(extractedMetadata).length === 0) {
+      extractedMetadata['Status'] = 'No readable metadata found in this file.';
+    }
+
+    setMetadata(extractedMetadata);
+    setFieldsToScrub([]);
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -219,6 +288,8 @@ export function MetadataScrubber() {
       await downloadCleanedImage();
     } else if (fileType === 'pdf') {
       await downloadCleanedPdf();
+    } else if (fileType === 'office') {
+      await downloadCleanedOfficeFile();
     }
   };
 
@@ -323,6 +394,88 @@ export function MetadataScrubber() {
     }
   };
 
+  const downloadCleanedOfficeFile = async () => {
+    if (!file) return;
+
+    try {
+      const fileBuffer = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(fileBuffer);
+      const coreXmlFile = zip.file('docProps/core.xml');
+      const appXmlFile = zip.file('docProps/app.xml');
+
+      if (coreXmlFile) {
+        let coreXmlText = await coreXmlFile.async('text');
+
+        // Use regex to surgically replace metadata in the XML string
+        if (fieldsToScrub.includes('Author')) {
+          coreXmlText = coreXmlText.replace(
+            /<dc:creator>.*?<\/dc:creator>/g,
+            '<dc:creator></dc:creator>'
+          );
+        }
+        if (fieldsToScrub.includes('Last Modified By')) {
+          coreXmlText = coreXmlText.replace(
+            /<cp:lastModifiedBy>.*?<\/cp:lastModifiedBy>/g,
+            '<cp:lastModifiedBy></cp:lastModifiedBy>'
+          );
+        }
+        if (fieldsToScrub.includes('Revision')) {
+          coreXmlText = coreXmlText.replace(
+            /<cp:revision>.*?<\/cp:revision>/g,
+            '<cp:revision>1</cp:revision>'
+          );
+        }
+
+        const now = new Date().toISOString();
+        if (fieldsToScrub.includes('Creation Date')) {
+          coreXmlText = coreXmlText.replace(
+            /<dcterms:created xsi:type="dcterms:W3CDTF">.*?<\/dcterms:created>/g,
+            `<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>`
+          );
+        }
+        if (fieldsToScrub.includes('Modification Date')) {
+          coreXmlText = coreXmlText.replace(
+            /<dcterms:modified xsi:type="dcterms:W3CDTF">.*?<\/dcterms:modified>/g,
+            `<dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>`
+          );
+        }
+
+        zip.file('docProps/core.xml', coreXmlText);
+      }
+
+      if (appXmlFile) {
+        let appXmlText = await appXmlFile.async('text');
+
+        if (fieldsToScrub.includes('Company')) {
+          appXmlText = appXmlText.replace(
+            /<Company>.*?<\/Company>/g,
+            '<Company></Company>'
+          );
+        }
+
+        zip.file('docProps/app.xml', appXmlText);
+      }
+
+      const newFileBuffer = await zip.generateAsync({ type: 'arraybuffer' });
+      const blob = new Blob([newFileBuffer], { type: file.type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scrubbed-${file.name}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error scrubbing Office file:', error);
+      toast({
+        title: 'Office File Scrubbing Failed',
+        description: 'Could not process the Office file for scrubbing.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="relative">
       {step === 'upload' && (
@@ -418,7 +571,7 @@ const UploadStep: FC<{
                 or drag and drop
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports images and PDF files
+                Supports images, PDF, and Office documents
               </p>
             </div>
             <Input
@@ -427,7 +580,7 @@ const UploadStep: FC<{
               className="hidden"
               onChange={onFileChange}
               disabled={isProcessing}
-              accept="image/*,application/pdf"
+              accept="image/*,application/pdf,.docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation"
             />
           </label>
         ) : (
@@ -487,67 +640,53 @@ const ReviewStep: FC<{
           <Table>
             <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
               <TableRow>
-                <TableHead className="w-12">
+                <TableHead className="w-[50px]">
                   <Checkbox
-                    onCheckedChange={onSelectAll}
-                    checked={isIndeterminate ? 'indeterminate' : allSelected}
-                    aria-label="Select all rows"
+                    checked={allSelected}
+                    onCheckedChange={(checked) => onSelectAll(checked)}
+                    aria-label="Select all"
+                    // @ts-ignore
+                    isIndeterminate={isIndeterminate}
                   />
                 </TableHead>
-                <TableHead className="w-1/3">Field</TableHead>
+                <TableHead>Field</TableHead>
                 <TableHead>Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(metadata).map(([key, value]) => {
-                return (
-                  <TableRow
-                    key={key}
-                    data-state={fieldsToScrub.includes(key) ? 'selected' : ''}
-                  >
-                    <TableCell>
-                      <Checkbox
-                        checked={fieldsToScrub.includes(key)}
-                        onCheckedChange={(checked) =>
-                          onScrubSelectionChange(key, checked)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <span>{key}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs break-all">
-                      {value}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {Object.entries(metadata).map(([key, value]) => (
+                <TableRow key={key}>
+                  <TableCell>
+                    <Checkbox
+                      checked={fieldsToScrub.includes(key)}
+                      onCheckedChange={(checked) =>
+                        onScrubSelectionChange(key, checked)
+                      }
+                      aria-label={`Select ${key}`}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{key}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {value}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between flex-wrap gap-4">
-        <Button variant="ghost" onClick={onCancel} disabled={isProcessing}>
+      <CardFooter className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" onClick={onCancel} disabled={isProcessing}>
+          <Trash2 className="mr-2 h-4 w-4" />
           Cancel
         </Button>
-        <Button
-          onClick={onScrub}
-          disabled={isProcessing || fieldsToScrub.length === 0}
-          size="lg"
-        >
+        <Button onClick={onScrub} disabled={isProcessing}>
           {isProcessing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Scrubbing...
-            </>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Scrub {fieldsToScrub.length} field(s)
-            </>
+            <ShieldCheck className="mr-2 h-4 w-4" />
           )}
+          Scrub & Download
         </Button>
       </CardFooter>
     </Card>
@@ -570,22 +709,20 @@ const DownloadStep: FC<{
       </CardDescription>
     </CardHeader>
     <CardContent className="text-center">
-      <p className="text-muted-foreground mb-6">
-        Download the new, privacy-safe version of your file.
-      </p>
-      <div className="flex gap-4 justify-center">
-        <Button size="lg" variant="outline" onClick={onStartOver}>
-          Start Over
-        </Button>
-        <Button
-          size="lg"
-          onClick={onDownload}
-          className="bg-primary hover:bg-primary/90"
-        >
+      <div className="flex flex-col items-center gap-4">
+        <p className="text-muted-foreground">
+          Your file is ready to be downloaded.
+        </p>
+        <Button onClick={onDownload} size="lg">
           <Download className="mr-2 h-5 w-5" />
-          Download Cleaned File
+          Download Now
         </Button>
       </div>
     </CardContent>
+    <CardFooter className="mt-6 flex justify-center">
+      <Button variant="link" onClick={onStartOver}>
+        Start Over With a New File
+      </Button>
+    </CardFooter>
   </Card>
 );
