@@ -29,22 +29,28 @@ export default function Home() {
               </AccordionTrigger>
               <AccordionContent className="text-base text-muted-foreground space-y-4 pt-4">
                 <p>
-                  Almost every digital photo you take contains hidden
-                  information called metadata (or EXIF data). This can include
-                  sensitive details like the exact date, time, and GPS location
-                  of where the photo was taken, plus the make and model of your
-                  camera or phone.
+                  Many of the files you create and share contain hidden
+                  information called metadata. While this data can be useful, it
+                  often includes sensitive details you might not want to share
+                  publicly.
                 </p>
-                <p>
-                  When you share these photos online, you could be unknowingly
-                  broadcasting this personal information. Social media
-                  platforms, forums, and other websites can collect this data.
-                  More recently, this information is being used to train AI
-                  models, often without your consent. Removing metadata is a
-                  critical step in protecting your privacy, controlling your
-                  digital footprint, and ensuring your personal data isn&apos;t
-                  harvested for profit.
-                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    <strong>Images:</strong> Digital photos can reveal the exact
+                    date, time, and GPS location of where the photo was taken,
+                    plus the make and model of your camera or phone.
+                  </li>
+                  <li>
+                    <strong>Documents (PDF, Word, etc.):</strong> These files
+                    often store author names, company details, editing history,
+                    and the exact dates the file was created and modified.
+                  </li>
+                  <li>
+                    <strong>Audio Files:</strong> Music and sound files can
+                    contain artist names, album titles, and even the software
+                    used for editing, which could link back to you.
+                  </li>
+                </ul>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
