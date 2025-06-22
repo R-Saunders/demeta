@@ -631,24 +631,38 @@ export function MetadataScrubber() {
     if (!file) return;
 
     try {
+      console.log('Starting video file scrubbing...');
+      console.log('File info:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+
       // Create FormData to send to server
       const formData = new FormData();
       formData.append('file', file);
       formData.append('fieldsToScrub', JSON.stringify(fieldsToScrub));
 
+      console.log('Calling server API...');
       // Call the server API for scrubbing
       const response = await fetch('/api/video-scrub', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Server error:', errorData);
         throw new Error(errorData.error || 'Failed to scrub video metadata');
       }
 
+      console.log('Getting response blob...');
       // Get the scrubbed file as blob
       const scrubbedBlob = await response.blob();
+      console.log('Blob received, size:', scrubbedBlob.size);
 
       // Create download link
       const url = URL.createObjectURL(scrubbedBlob);
@@ -660,6 +674,7 @@ export function MetadataScrubber() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      console.log('File downloaded successfully');
       toast({
         title: 'Video File Scrubbed and Downloaded',
         description:

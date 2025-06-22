@@ -1,101 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { read } from 'fast-video-metadata';
 import { writeFile, unlink, readFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
 export async function POST(request: NextRequest) {
+  console.log('Video scrub API called');
+
   try {
     const formData = await request.formData();
+    console.log('FormData received');
+
     const file = formData.get('file') as File;
     const fieldsToScrub = formData.get('fieldsToScrub') as string;
 
+    console.log('File info:', {
+      name: file?.name,
+      size: file?.size,
+      type: file?.type,
+    });
+
     if (!file) {
+      console.log('No file provided');
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
     // Check if it's a video file
     if (!file.type.startsWith('video/')) {
+      console.log('File is not a video:', file.type);
       return NextResponse.json(
         { error: 'File is not a video' },
         { status: 400 }
       );
     }
 
+    console.log('Converting file to buffer...');
     // Convert File to Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    console.log('Buffer created, size:', buffer.length);
 
-    // Create temporary files
-    const tempInputPath = join(tmpdir(), `input-${Date.now()}-${file.name}`);
-    const tempOutputPath = join(tmpdir(), `output-${Date.now()}-${file.name}`);
+    // Create temporary file
+    const tempFilePath = join(tmpdir(), `video-${Date.now()}-${file.name}`);
+    console.log('Temp file path:', tempFilePath);
 
     try {
-      // Write the input file to temp directory
-      await writeFile(tempInputPath, buffer);
+      console.log('Writing file to temp directory...');
+      // Write the file to temp directory
+      await writeFile(tempFilePath, buffer);
+      console.log('File written to temp directory');
 
-      // Extract metadata first to see what we're working with
-      const metadata = await read(tempInputPath, true);
+      console.log('Reading file back...');
+      // For now, we'll just return the original file
+      // TODO: Implement proper video metadata scrubbing
+      const fileBuffer = await readFile(tempFilePath);
+      console.log('File read back, size:', fileBuffer.length);
 
-      // For now, we'll implement a basic scrubbing approach
-      // This is a simplified version - full implementation would require
-      // more sophisticated video container manipulation
+      console.log('Cleaning up temp file...');
+      // Clean up temp file
+      await unlink(tempFilePath);
+      console.log('Temp file cleaned up');
 
-      // Read the file as binary data
-      const fileBuffer = await readFile(tempInputPath);
-
-      // Basic metadata removal for common video formats
-      let scrubbedBuffer = fileBuffer;
-
-      if (
-        file.name.toLowerCase().endsWith('.mp4') ||
-        file.name.toLowerCase().endsWith('.mov')
-      ) {
-        // For MP4/MOV files, we'll try to remove some metadata atoms
-        // This is a simplified approach - in practice, you'd need more sophisticated
-        // video container manipulation
-
-        // For now, we'll just return the original file with a note
-        // TODO: Implement proper MP4/MOV metadata scrubbing
-        scrubbedBuffer = fileBuffer;
-      } else {
-        // For other formats, return original for now
-        scrubbedBuffer = fileBuffer;
-      }
-
-      // Write the scrubbed file
-      await writeFile(tempOutputPath, scrubbedBuffer);
-
-      // Read the scrubbed file back
-      const scrubbedFileBuffer = await readFile(tempOutputPath);
-
-      // Clean up temp files
-      await unlink(tempInputPath);
-      await unlink(tempOutputPath);
-
-      // Return the scrubbed file
-      return new NextResponse(scrubbedFileBuffer, {
+      console.log('Returning file response...');
+      // Return the file (currently unchanged, but processed through server)
+      return new NextResponse(fileBuffer, {
         headers: {
           'Content-Type': file.type,
           'Content-Disposition': `attachment; filename="scrubbed-${file.name}"`,
         },
       });
     } catch (error) {
-      // Clean up temp files if they exist
+      console.error('Error in file processing:', error);
+      // Clean up temp file if it exists
       try {
-        await unlink(tempInputPath);
-        await unlink(tempOutputPath);
+        await unlink(tempFilePath);
+        console.log('Temp file cleaned up after error');
       } catch (cleanupError) {
-        console.error('Error cleaning up temp files:', cleanupError);
+        console.error('Error cleaning up temp file:', cleanupError);
       }
 
       throw error;
     }
   } catch (error) {
-    console.error('Error scrubbing video metadata:', error);
+    console.error('Error processing video file:', error);
     return NextResponse.json(
       {
-        error: 'Failed to scrub video metadata',
+        error: 'Failed to process video file',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
