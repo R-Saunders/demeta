@@ -858,11 +858,9 @@ const ReviewStep: FC<{
               <TableRow>
                 <TableHead className="w-[50px]">
                   <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={(checked) => onSelectAll(checked)}
+                    checked={isIndeterminate ? 'indeterminate' : allSelected}
+                    onCheckedChange={(checked) => onSelectAll(!!checked)}
                     aria-label="Select all"
-                    // @ts-ignore
-                    isIndeterminate={isIndeterminate}
                   />
                 </TableHead>
                 <TableHead>Field</TableHead>

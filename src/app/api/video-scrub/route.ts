@@ -7,6 +7,8 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
+export const maxDuration = 300; // 5 minutes
+
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get('file') as File;
