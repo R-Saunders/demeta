@@ -108,6 +108,17 @@ The application uses a combination of client-side libraries to perform all proce
 1.  **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
 2.  **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
 3.  **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
+4.  **Audio Metadata**: Uses `music-metadata` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
+
+## Setup & Run Locally
+
+## How It Works
+
+The application uses a combination of client-side libraries to perform all processing directly in your browser. No files are ever uploaded to a server, ensuring your privacy.
+
+1.  **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
+2.  **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
+3.  **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
 4.  **Audio Metadata**: Uses `music-metadata-browser` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
 
 ## Setup & Run Locally
