@@ -220,47 +220,34 @@ export function MetadataScrubber() {
 	};
 
 	return (
-		<div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
-			<div className="w-full max-w-4xl mx-auto">
-				<header className="text-center mb-10">
-					<h1 className="text-4xl md:text-5xl font-bold font-headline">
-						MetadataScrub
-					</h1>
-					<p className="text-muted-foreground mt-2 text-lg">
-						Protect your privacy by removing metadata from your files.
-					</p>
-				</header>
-
-				<div className="relative">
-					{step === "upload" && (
-						<UploadStep
-							onFileChange={handleFileChange}
-							onDrop={handleDrop}
-							isProcessing={isProcessing}
-							progress={progress}
-						/>
-					)}
-					{step === "review" && file && metadata && (
-						<ReviewStep
-							fileName={file.name}
-							metadata={metadata}
-							fieldsToScrub={fieldsToScrub}
-							onScrubSelectionChange={handleScrubSelectionChange}
-							onSelectAll={handleSelectAll}
-							onScrub={scrubMetadata}
-							isProcessing={isProcessing}
-							onCancel={startOver}
-						/>
-					)}
-					{step === "download" && file && (
-						<DownloadStep
-							fileName={file.name}
-							onDownload={downloadCleanedFile}
-							onStartOver={startOver}
-						/>
-					)}
-				</div>
-			</div>
+		<div className="relative">
+			{step === "upload" && (
+				<UploadStep
+					onFileChange={handleFileChange}
+					onDrop={handleDrop}
+					isProcessing={isProcessing}
+					progress={progress}
+				/>
+			)}
+			{step === "review" && file && metadata && (
+				<ReviewStep
+					fileName={file.name}
+					metadata={metadata}
+					fieldsToScrub={fieldsToScrub}
+					onScrubSelectionChange={handleScrubSelectionChange}
+					onSelectAll={handleSelectAll}
+					onScrub={scrubMetadata}
+					isProcessing={isProcessing}
+					onCancel={startOver}
+				/>
+			)}
+			{step === "download" && file && (
+				<DownloadStep
+					fileName={file.name}
+					onDownload={downloadCleanedFile}
+					onStartOver={startOver}
+				/>
+			)}
 		</div>
 	);
 }
@@ -306,8 +293,9 @@ const UploadStep: FC<{
 					<label
 						htmlFor="file-upload"
 						className={cn(
-							"flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted transition-colors",
-							isDragging && "bg-muted border-primary"
+							"flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-card transition-colors",
+							"hover:bg-muted hover:border-primary/30",
+							isDragging && "bg-primary/10 border-primary"
 						)}
 						onDragEnter={handleDragEnter}
 						onDragLeave={handleDragLeave}
@@ -317,7 +305,7 @@ const UploadStep: FC<{
 							setIsDragging(false);
 						}}
 					>
-						<div className="flex flex-col items-center justify-center pt-5 pb-6">
+						<div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
 							<FileUp className="w-10 h-10 mb-3 text-muted-foreground" />
 							<p className="mb-2 text-sm text-muted-foreground">
 								<span className="font-semibold text-primary">
