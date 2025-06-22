@@ -56,21 +56,36 @@ export default function Home() {
                   This tool supports a wide range of file formats. You can
                   upload and scrub metadata from the following file types:
                 </p>
-                <ul className="list-disc list-inside grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                  <li>JPEG (.jpg, .jpeg)</li>
-                  <li>PNG (.png)</li>
-                  <li>TIFF (.tiff)</li>
-                  <li>HEIC (.heic)</li>
-                  <li>WebP (.webp)</li>
-                  <li>GIF (.gif)</li>
-                  <li>PDF (.pdf)</li>
-                  <li>Word (.docx)</li>
-                  <li>Excel (.xlsx)</li>
-                  <li>PowerPoint (.pptx)</li>
-                  <li>MP3 (.mp3)</li>
-                  <li>FLAC (.flac)</li>
-                  <li>WAV (.wav)</li>
-                </ul>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-4 mt-4">
+                  <div>
+                    <h4 className="font-semibold text-foreground">Images</h4>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>JPEG (.jpg, .jpeg)</li>
+                      <li>PNG (.png)</li>
+                      <li>TIFF (.tiff)</li>
+                      <li>HEIC (.heic)</li>
+                      <li>WebP (.webp)</li>
+                      <li>GIF (.gif)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground">Documents</h4>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>PDF (.pdf)</li>
+                      <li>Word (.docx)</li>
+                      <li>Excel (.xlsx)</li>
+                      <li>PowerPoint (.pptx)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground">Audio</h4>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>MP3 (.mp3)</li>
+                      <li>FLAC (.flac)</li>
+                      <li>WAV (.wav)</li>
+                    </ul>
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
