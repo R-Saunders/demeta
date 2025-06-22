@@ -40,7 +40,7 @@ import { cn } from '@/lib/utils';
 
 type Metadata = Record<string, string>;
 type Step = 'upload' | 'review' | 'download';
-type FileType = 'image' | 'pdf' | 'office' | 'audio';
+type FileType = 'image' | 'pdf' | 'office' | 'audio' | 'video';
 
 // Define the structure for Office document metadata XML
 const xmlParserOptions = {
@@ -92,9 +92,12 @@ export function MetadataScrubber() {
       } else if (selectedFile.type.startsWith('audio/')) {
         setFileType('audio');
         await processAudioFile(selectedFile);
+      } else if (selectedFile.type.startsWith('video/')) {
+        setFileType('video');
+        await processVideoFile(selectedFile);
       } else {
         throw new Error(
-          'Unsupported file type. Please upload a supported image, PDF, or Office document.'
+          'Unsupported file type. Please upload a supported image, PDF, Office document, audio, or video file.'
         );
       }
 
@@ -271,6 +274,36 @@ export function MetadataScrubber() {
     setFieldsToScrub([]);
   };
 
+  const processVideoFile = async (selectedFile: File) => {
+    // Basic video file processing - placeholder for now
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    setProgress(30);
+
+    // For now, we'll extract basic file information
+    // TODO: Implement proper video metadata extraction when fast-video-metadata is available
+    setProgress(70);
+
+    const extractedMetadata: Metadata = {};
+
+    // Basic file information
+    extractedMetadata['File Name'] = selectedFile.name;
+    extractedMetadata['File Size'] =
+      `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
+    extractedMetadata['File Type'] = selectedFile.type;
+    extractedMetadata['Last Modified'] = new Date(
+      selectedFile.lastModified
+    ).toLocaleString();
+
+    // Video-specific information
+    extractedMetadata['Video Support'] =
+      'Video metadata scrubbing is coming soon!';
+    extractedMetadata['Status'] =
+      'Video file detected. Full metadata extraction and scrubbing will be available in the next update.';
+
+    setMetadata(extractedMetadata);
+    setFieldsToScrub([]);
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -326,6 +359,8 @@ export function MetadataScrubber() {
       await downloadCleanedOfficeFile();
     } else if (fileType === 'audio') {
       await downloadCleanedAudioFile();
+    } else if (fileType === 'video') {
+      await downloadCleanedVideoFile();
     }
   };
 
@@ -565,6 +600,37 @@ export function MetadataScrubber() {
     }
   };
 
+  const downloadCleanedVideoFile = async () => {
+    // Placeholder for video file scrubbing
+    if (!file) return;
+
+    try {
+      // For now, just download the original file
+      // TODO: Implement proper video metadata scrubbing
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scrubbed-${file.name}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Video File Downloaded',
+        description:
+          'Video metadata scrubbing is coming soon. The original file has been downloaded.',
+      });
+    } catch (error) {
+      console.error('Error processing video file:', error);
+      toast({
+        title: 'Video File Processing Failed',
+        description: 'Could not process the video file.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="relative">
       {step === 'upload' && (
@@ -669,7 +735,7 @@ const UploadStep: FC<{
               className="hidden"
               onChange={onFileChange}
               disabled={isProcessing}
-              accept="image/*,application/pdf,.docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,audio/*"
+              accept="image/*,application/pdf,.docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,audio/*,video/*"
             />
           </label>
         ) : (

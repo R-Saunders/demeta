@@ -5,9 +5,11 @@ This document outlines the strategic roadmap and potential future features for t
 ## 🚀 Top Priority
 
 - **Add Video File Support**:
-  - Research and implement metadata scrubbing for common video containers like `.mp4`, `.mov`, and `.mkv`.
+  - ✅ **Basic video file detection and UI support implemented**
+  - 🔄 **In Progress**: Research and implement metadata scrubbing for common video containers like `.mp4`, `.mov`, and `.mkv`.
   - This involves handling various metadata streams (video, audio, subtitles) and complex container structures (`moov` atoms in MP4/MOV, etc.).
   - The goal is to remove data like creation date, GPS coordinates, and device information without re-encoding the video.
+  - **Next Steps**: Install and integrate `fast-video-metadata` library for proper metadata extraction and scrubbing.
 
 ## Medium Priority
 

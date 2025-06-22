@@ -56,7 +56,7 @@ export default function Home() {
                   This tool supports a wide range of file formats. You can
                   upload and scrub metadata from the following file types:
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4 mt-4">
                   <div>
                     <h4 className="font-semibold text-foreground">Images</h4>
                     <ul className="list-disc list-inside mt-1 space-y-1">
@@ -83,6 +83,17 @@ export default function Home() {
                       <li>MP3 (.mp3)</li>
                       <li>FLAC (.flac)</li>
                       <li>WAV (.wav)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground">Video</h4>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>MP4 (.mp4)</li>
+                      <li>MOV (.mov)</li>
+                      <li>MKV (.mkv)</li>
+                      <li>AVI (.avi)</li>
+                      <li>WebM (.webm)</li>
+                      <li>Coming Soon!</li>
                     </ul>
                   </div>
                 </div>
