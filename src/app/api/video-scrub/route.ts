@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, unlink, readFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+import { execFile } from 'child_process';
 
 export const maxDuration = 60; // 1 minute
 
@@ -18,7 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
-  // Parse the fields to scrub
+  // Parse the fields to scrub (not used for now, ExifTool will remove all metadata)
   let fieldsToRemove: string[] = [];
   try {
     if (fieldsToScrub) {
@@ -40,44 +37,19 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(tempInputPath, buffer);
 
-    console.log(`[FFMPEG] Starting scrub for: ${file.name}`);
-    console.log(`[FFMPEG] Fields to remove:`, fieldsToRemove);
-
+    // Use ExifTool to remove all metadata
     await new Promise<void>((resolve, reject) => {
-      const ffmpegCommand = ffmpeg(tempInputPath);
-
-      // If specific fields are selected, we need to be more careful
-      // For now, we'll strip all metadata but log what was requested
-      if (fieldsToRemove.length > 0) {
-        console.log(
-          `[FFMPEG] Removing specific fields: ${fieldsToRemove.join(', ')}`
-        );
-        // TODO: Implement selective metadata removal when FFmpeg supports it
-        // For now, we strip all metadata as FFmpeg doesn't support selective removal
-      }
-
-      ffmpegCommand
-        .outputOptions([
-          '-c:v copy', // Copy video stream without re-encoding
-          '-c:a copy', // Copy audio stream without re-encoding
-          '-map_metadata -1', // Strip all metadata
-        ])
-        .save(tempOutputPath)
-        .on('start', (commandLine) => {
-          console.log(`[FFMPEG] Spawned Ffmpeg with command: ${commandLine}`);
-        })
-        .on('end', () => {
-          console.log(
-            `[FFMPEG] Scrubbing finished successfully for: ${tempOutputPath}`
-          );
+      execFile(
+        'exiftool',
+        ['-all=', '-o', tempOutputPath, tempInputPath],
+        (err, stdout, stderr) => {
+          if (err) {
+            console.error('[ExifTool] Error:', err, stderr);
+            return reject(err);
+          }
           resolve();
-        })
-        .on('error', (err, stdout, stderr) => {
-          console.error('[FFMPEG] Error:', err.message);
-          console.error('[FFMPEG] Stdout:', stdout);
-          console.error('[FFMPEG] Stderr:', stderr);
-          reject(err);
-        });
+        }
+      );
     });
 
     const scrubbedFileBuffer = await readFile(tempOutputPath);
@@ -92,7 +64,7 @@ export async function POST(request: NextRequest) {
     console.error('[API] Error scrubbing video metadata:', error);
     return NextResponse.json(
       {
-        error: 'Failed to scrub video metadata with ffmpeg',
+        error: 'Failed to scrub video metadata with ExifTool',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
