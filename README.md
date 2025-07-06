@@ -63,7 +63,7 @@ Navigate to [http://localhost:3000](http://localhost:3000) to see the applicatio
 
 ## Project Structure
 
-```
+```zsh
 src/
 ├── app/                 # Next.js app directory
 │   ├── layout.tsx      # Root layout component
@@ -107,11 +107,11 @@ This project is licensed under the MIT License.
 
 The application uses a combination of client-side and server-side libraries to process your files:
 
-1.  **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
-2.  **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
-3.  **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
-4.  **Audio Metadata**: Uses `music-metadata` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
-5.  **Video Metadata**: Uses ExifTool server-side to extract and scrub all metadata, including custom/user fields and Windows-specific tags. This is the most thorough method available for video files.
+1. **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
+2. **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
+3. **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
+4. **Audio Metadata**: Uses `music-metadata` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
+5. **Video Metadata**: Uses ExifTool server-side to extract and scrub all metadata, including custom/user fields and Windows-specific tags. This is the most thorough method available for video files.
 
 ## Setup & Run Locally
 

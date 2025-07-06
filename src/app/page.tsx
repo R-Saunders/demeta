@@ -13,10 +13,7 @@ export default function Home() {
       <div className="w-full max-w-4xl mx-auto">
         <header className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">
-            <Link
-              href="/"
-              className="transition-colors text-primary"
-            >
+            <Link href="/" className="transition-colors text-primary">
               Demeta
             </Link>
           </h1>

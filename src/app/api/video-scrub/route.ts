@@ -9,24 +9,9 @@ export const maxDuration = 60; // 1 minute
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get('file') as File;
-  const fieldsToScrub = formData.get('fieldsToScrub') as string;
 
   if (!file) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-  }
-
-  // Parse the fields to scrub (not used for now, ExifTool will remove all metadata)
-  let fieldsToRemove: string[] = [];
-  try {
-    if (fieldsToScrub) {
-      fieldsToRemove = JSON.parse(fieldsToScrub);
-    }
-  } catch (error) {
-    console.error('Error parsing fieldsToScrub:', error);
-    return NextResponse.json(
-      { error: 'Invalid fieldsToScrub parameter' },
-      { status: 400 }
-    );
   }
 
   const tempInputPath = join(tmpdir(), `input-${Date.now()}-${file.name}`);
@@ -44,7 +29,8 @@ export async function POST(request: NextRequest) {
         ['-all=', '-o', tempOutputPath, tempInputPath],
         (err, stdout, stderr) => {
           if (err) {
-            console.error('[ExifTool] Error:', err, stderr);
+            // TODO: Replace with production logger if needed
+            // console.error('[ExifTool] Error:', err, stderr);
             return reject(err);
           }
           resolve();
@@ -61,7 +47,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[API] Error scrubbing video metadata:', error);
+    // TODO: Replace with production logger if needed
+    // console.error('[API] Error scrubbing video metadata:', error);
     return NextResponse.json(
       {
         error: 'Failed to scrub video metadata with ExifTool',
@@ -71,17 +58,11 @@ export async function POST(request: NextRequest) {
     );
   } finally {
     // Clean up both temporary files
-    await unlink(tempInputPath).catch((err) =>
-      console.error(
-        `[CLEANUP] Failed to delete temp input file: ${tempInputPath}`,
-        err
-      )
-    );
-    await unlink(tempOutputPath).catch((err) =>
-      console.error(
-        `[CLEANUP] Failed to delete temp output file: ${tempOutputPath}`,
-        err
-      )
-    );
+    await unlink(tempInputPath).catch(() => {
+      // TODO: Replace with production logger if needed
+    });
+    await unlink(tempOutputPath).catch(() => {
+      // TODO: Replace with production logger if needed
+    });
   }
 }
