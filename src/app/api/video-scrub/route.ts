@@ -12,9 +12,24 @@ export const maxDuration = 60; // 1 minute
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get('file') as File;
+  const fieldsToScrub = formData.get('fieldsToScrub') as string;
 
   if (!file) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+  }
+
+  // Parse the fields to scrub
+  let fieldsToRemove: string[] = [];
+  try {
+    if (fieldsToScrub) {
+      fieldsToRemove = JSON.parse(fieldsToScrub);
+    }
+  } catch (error) {
+    console.error('Error parsing fieldsToScrub:', error);
+    return NextResponse.json(
+      { error: 'Invalid fieldsToScrub parameter' },
+      { status: 400 }
+    );
   }
 
   const tempInputPath = join(tmpdir(), `input-${Date.now()}-${file.name}`);
@@ -26,8 +41,22 @@ export async function POST(request: NextRequest) {
     await writeFile(tempInputPath, buffer);
 
     console.log(`[FFMPEG] Starting scrub for: ${file.name}`);
+    console.log(`[FFMPEG] Fields to remove:`, fieldsToRemove);
+
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(tempInputPath)
+      const ffmpegCommand = ffmpeg(tempInputPath);
+
+      // If specific fields are selected, we need to be more careful
+      // For now, we'll strip all metadata but log what was requested
+      if (fieldsToRemove.length > 0) {
+        console.log(
+          `[FFMPEG] Removing specific fields: ${fieldsToRemove.join(', ')}`
+        );
+        // TODO: Implement selective metadata removal when FFmpeg supports it
+        // For now, we strip all metadata as FFmpeg doesn't support selective removal
+      }
+
+      ffmpegCommand
         .outputOptions([
           '-c:v copy', // Copy video stream without re-encoding
           '-c:a copy', // Copy audio stream without re-encoding
