@@ -74,6 +74,14 @@ export function MetadataScrubber() {
     setMetadata(null);
 
     try {
+      // Add file size validation
+      const maxFileSize = 100 * 1024 * 1024; // 100MB limit
+      if (selectedFile.size > maxFileSize) {
+        throw new Error(
+          `File size (${(selectedFile.size / 1024 / 1024).toFixed(1)}MB) exceeds the maximum allowed size of 100MB.`
+        );
+      }
+
       if (selectedFile.type.startsWith('image/')) {
         setFileType('image');
         await processImageFile(selectedFile);
@@ -249,59 +257,95 @@ export function MetadataScrubber() {
     await new Promise((resolve) => setTimeout(resolve, 250));
     setProgress(30);
 
-    const metadata = await music.parseBlob(selectedFile);
-    setProgress(70);
+    try {
+      const metadata = await music.parseBlob(selectedFile);
+      setProgress(70);
 
-    const extractedMetadata: Metadata = {};
-    if (metadata.common.title)
-      extractedMetadata['Title'] = metadata.common.title;
-    if (metadata.common.artist)
-      extractedMetadata['Artist'] = metadata.common.artist;
-    if (metadata.common.album)
-      extractedMetadata['Album'] = metadata.common.album;
-    if (metadata.common.year)
-      extractedMetadata['Year'] = metadata.common.year.toString();
-    if (metadata.common.track.no)
-      extractedMetadata['Track Number'] = metadata.common.track.no.toString();
-    if (metadata.common.genre)
-      extractedMetadata['Genre'] = metadata.common.genre.join(', ');
+      const extractedMetadata: Metadata = {};
+      if (metadata.common.title)
+        extractedMetadata['Title'] = metadata.common.title;
+      if (metadata.common.artist)
+        extractedMetadata['Artist'] = metadata.common.artist;
+      if (metadata.common.album)
+        extractedMetadata['Album'] = metadata.common.album;
+      if (metadata.common.year)
+        extractedMetadata['Year'] = metadata.common.year.toString();
+      if (metadata.common.track.no)
+        extractedMetadata['Track Number'] = metadata.common.track.no.toString();
+      if (metadata.common.genre)
+        extractedMetadata['Genre'] = metadata.common.genre.join(', ');
 
-    if (Object.keys(extractedMetadata).length === 0) {
-      extractedMetadata['Status'] = 'No readable metadata found in this file.';
+      if (Object.keys(extractedMetadata).length === 0) {
+        extractedMetadata['Status'] =
+          'No readable metadata found in this file.';
+      }
+
+      setMetadata(extractedMetadata);
+      setFieldsToScrub([]);
+    } catch (error) {
+      console.error('Error processing audio file:', error);
+
+      toast({
+        title: 'Audio Processing Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not process this audio file. It may be corrupted or unsupported.',
+        variant: 'destructive',
+      });
+
+      startOver();
     }
-
-    setMetadata(extractedMetadata);
-    setFieldsToScrub([]);
   };
 
   const processVideoFile = async (selectedFile: File) => {
-    // Basic video file processing - placeholder for now
+    // Server-side video file processing
     await new Promise((resolve) => setTimeout(resolve, 250));
     setProgress(30);
 
-    // For now, we'll extract basic file information
-    // TODO: Implement proper video metadata extraction when fast-video-metadata is available
-    setProgress(70);
+    try {
+      // Create FormData to send to server
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-    const extractedMetadata: Metadata = {};
+      setProgress(50);
 
-    // Basic file information
-    extractedMetadata['File Name'] = selectedFile.name;
-    extractedMetadata['File Size'] =
-      `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
-    extractedMetadata['File Type'] = selectedFile.type;
-    extractedMetadata['Last Modified'] = new Date(
-      selectedFile.lastModified
-    ).toLocaleString();
+      // Call the server API
+      const response = await fetch('/api/video-metadata', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // Video-specific information
-    extractedMetadata['Video Support'] =
-      'Video metadata scrubbing is coming soon!';
-    extractedMetadata['Status'] =
-      'Video file detected. Full metadata extraction and scrubbing will be available in the next update.';
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process video metadata');
+      }
 
-    setMetadata(extractedMetadata);
-    setFieldsToScrub([]);
+      const data = await response.json();
+      setProgress(70);
+
+      if (data.success && data.metadata) {
+        setMetadata(data.metadata);
+        setFieldsToScrub([]);
+      } else {
+        throw new Error('No metadata returned from server');
+      }
+    } catch (error) {
+      console.error('Error processing video file:', error);
+
+      // Properly handle video processing errors
+      toast({
+        title: 'Video Processing Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not process this video file. It may be corrupted, unsupported, or too large.',
+        variant: 'destructive',
+      });
+
+      // Reset to upload step instead of showing misleading basic info
+      startOver();
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -343,9 +387,15 @@ export function MetadataScrubber() {
 
   const scrubMetadata = async () => {
     setIsProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await downloadCleanedFile();
     setIsProcessing(false);
-    setStep('download');
+    setStep('upload'); // Go back to the beginning after download
+    // Reset file state after a delay to allow for the next upload
+    setTimeout(() => {
+      setFile(null);
+      setMetadata(null);
+      setFieldsToScrub([]);
+    }, 500);
   };
 
   const downloadCleanedFile = async () => {
@@ -601,13 +651,45 @@ export function MetadataScrubber() {
   };
 
   const downloadCleanedVideoFile = async () => {
-    // Placeholder for video file scrubbing
+    // Server-side video file scrubbing
     if (!file) return;
 
     try {
-      // For now, just download the original file
-      // TODO: Implement proper video metadata scrubbing
-      const url = URL.createObjectURL(file);
+      console.log('Starting video file scrubbing...');
+      console.log('File info:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+
+      // Create FormData to send to server
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fieldsToScrub', JSON.stringify(fieldsToScrub));
+
+      console.log('Calling server API...');
+      // Call the server API for scrubbing
+      const response = await fetch('/api/video-scrub', {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        throw new Error(errorData.error || 'Failed to scrub video metadata');
+      }
+
+      console.log('Getting response blob...');
+      // Get the scrubbed file as blob
+      const scrubbedBlob = await response.blob();
+      console.log('Blob received, size:', scrubbedBlob.size);
+
+      // Create download link
+      const url = URL.createObjectURL(scrubbedBlob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `scrubbed-${file.name}`;
@@ -616,16 +698,20 @@ export function MetadataScrubber() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      console.log('File downloaded successfully');
       toast({
-        title: 'Video File Downloaded',
+        title: 'Video File Scrubbed and Downloaded',
         description:
-          'Video metadata scrubbing is coming soon. The original file has been downloaded.',
+          'Video metadata has been processed and the cleaned file has been downloaded.',
       });
     } catch (error) {
-      console.error('Error processing video file:', error);
+      console.error('Error scrubbing video file:', error);
       toast({
-        title: 'Video File Processing Failed',
-        description: 'Could not process the video file.',
+        title: 'Video File Scrubbing Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not scrub the video file.',
         variant: 'destructive',
       });
     }
@@ -651,13 +737,6 @@ export function MetadataScrubber() {
           onScrub={scrubMetadata}
           isProcessing={isProcessing}
           onCancel={startOver}
-        />
-      )}
-      {step === 'download' && file && (
-        <DownloadStep
-          fileName={file.name}
-          onDownload={downloadCleanedFile}
-          onStartOver={startOver}
         />
       )}
     </div>
@@ -726,7 +805,7 @@ const UploadStep: FC<{
                 or drag and drop
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports images, PDF, Office, and audio files
+                Supports images, PDF, Office, audio, and video files
               </p>
             </div>
             <Input
@@ -797,11 +876,9 @@ const ReviewStep: FC<{
               <TableRow>
                 <TableHead className="w-[50px]">
                   <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={(checked) => onSelectAll(checked)}
+                    checked={isIndeterminate ? 'indeterminate' : allSelected}
+                    onCheckedChange={(checked) => onSelectAll(!!checked)}
                     aria-label="Select all"
-                    // @ts-ignore
-                    isIndeterminate={isIndeterminate}
                   />
                 </TableHead>
                 <TableHead>Field</TableHead>
@@ -847,37 +924,3 @@ const ReviewStep: FC<{
     </Card>
   );
 };
-
-const DownloadStep: FC<{
-  fileName: string;
-  onDownload: () => void;
-  onStartOver: () => void;
-}> = ({ fileName, onDownload, onStartOver }) => (
-  <Card className="w-full animate-in fade-in-50 duration-500">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Download className="text-primary" /> 3. Download Your Cleaned File
-      </CardTitle>
-      <CardDescription>
-        We&apos;ve scrubbed the selected metadata from{' '}
-        <span className="font-semibold text-primary">{fileName}</span>.
-      </CardDescription>
-    </CardHeader>
-    <CardContent className="text-center">
-      <div className="flex flex-col items-center gap-4">
-        <p className="text-muted-foreground">
-          Your file is ready to be downloaded.
-        </p>
-        <Button onClick={onDownload} size="lg">
-          <Download className="mr-2 h-5 w-5" />
-          Download Now
-        </Button>
-      </div>
-    </CardContent>
-    <CardFooter className="mt-6 flex justify-center">
-      <Button variant="link" onClick={onStartOver}>
-        Start Over With a New File
-      </Button>
-    </CardFooter>
-  </Card>
-);

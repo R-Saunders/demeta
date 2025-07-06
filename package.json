@@ -41,6 +41,7 @@
     "fast-video-metadata": "^3.1.0",
     "fast-xml-parser": "^4.4.0",
     "firebase": "^11.9.1",
+    "fluent-ffmpeg": "^2.1.3",
     "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
     "music-metadata": "^11.3.0",
@@ -56,6 +57,9 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@types/fluent-ffmpeg": "^2.1.24",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

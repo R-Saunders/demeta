@@ -6,10 +6,13 @@ This document outlines the strategic roadmap and potential future features for t
 
 - **Add Video File Support**:
   - ✅ **Basic video file detection and UI support implemented**
-  - 🔄 **In Progress**: Research and implement metadata scrubbing for common video containers like `.mp4`, `.mov`, and `.mkv`.
+  - ✅ **Server-side video metadata extraction implemented**
+  - ✅ **Server-side video metadata scrubbing API created**
+  - 🔄 **In Progress**: Enhance video metadata scrubbing with more sophisticated container manipulation.
   - This involves handling various metadata streams (video, audio, subtitles) and complex container structures (`moov` atoms in MP4/MOV, etc.).
   - The goal is to remove data like creation date, GPS coordinates, and device information without re-encoding the video.
-  - **Next Steps**: Install and integrate `fast-video-metadata` library for proper metadata extraction and scrubbing.
+  - **Current Status**: Server-side processing using Next.js API routes with `fast-video-metadata` library. Basic metadata extraction and scrubbing working. Full metadata removal requires more sophisticated video container manipulation.
+  - **Next Steps**: Implement advanced video container manipulation for complete metadata removal, add support for more video formats, and optimize performance for large video files.
 
 ## Medium Priority
 
