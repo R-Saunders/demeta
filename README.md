@@ -12,6 +12,7 @@ A Next.js application that helps you protect your privacy by removing metadata f
 - **PDFs**: Scrubs common metadata fields like Author, Creator, and modification dates.
 - **Modern Office Documents**: Handles `.docx`, `.xlsx`, and `.pptx` files, removing core properties like author and company, and resetting revision numbers.
 - **Audio Files**: Reads metadata from common audio formats and scrubs ID3 tags from `.mp3` files.
+- **Video Files**: Extracts and scrubs all metadata (including custom/user fields and Windows "Details") from MP4/MOV files using ExifTool on the server. No longer uses ffmpeg.
 
 ## Prerequisites
 
@@ -19,6 +20,7 @@ Before running this application, make sure you have the following installed:
 
 - **Node.js** (version 18 or higher)
 - **npm** or **yarn** package manager
+- **ExifTool** (must be available in your system PATH; install with `sudo apt-get install libimage-exiftool-perl` on Ubuntu/WSL2)
 
 ## Development Setup
 
@@ -103,36 +105,26 @@ This project is licensed under the MIT License.
 
 ## How It Works
 
-The application uses a combination of client-side libraries to perform all processing directly in your browser. No files are ever uploaded to a server, ensuring your privacy.
+The application uses a combination of client-side and server-side libraries to process your files:
 
 1.  **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
 2.  **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
 3.  **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
 4.  **Audio Metadata**: Uses `music-metadata` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
-
-## Setup & Run Locally
-
-## How It Works
-
-The application uses a combination of client-side libraries to perform all processing directly in your browser. No files are ever uploaded to a server, ensuring your privacy.
-
-1.  **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
-2.  **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
-3.  **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
-4.  **Audio Metadata**: Uses `music-metadata-browser` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
+5.  **Video Metadata**: Uses ExifTool server-side to extract and scrub all metadata, including custom/user fields and Windows-specific tags. This is the most thorough method available for video files.
 
 ## Setup & Run Locally
 
 To get started with the Metadata Scrubber locally, follow these steps:
 
-1.  **Clone the repository:**
+1. Clone the repository:
 
 ```bash
 git clone <repository-url>
 cd metadata-scrubber
 ```
 
-2.  **Install dependencies:**
+2. Install dependencies:
 
 ```bash
 npm install
@@ -140,7 +132,7 @@ npm install
 yarn install
 ```
 
-3.  **Run the development server:**
+3. Run the development server:
 
 ```bash
 npm run dev
@@ -150,6 +142,6 @@ yarn dev
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
 
-4.  **Open your browser:**
+4. Open your browser:
 
 Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.

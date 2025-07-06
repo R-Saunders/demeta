@@ -2,17 +2,22 @@
 
 This document outlines the strategic roadmap and potential future features for the Metadata Scrubber application.
 
-## 🚀 Top Priority
+## Top Priority
 
 - **Add Video File Support**:
   - ✅ **Basic video file detection and UI support implemented**
   - ✅ **Server-side video metadata extraction implemented**
   - ✅ **Server-side video metadata scrubbing API created**
-  - 🔄 **In Progress**: Enhance video metadata scrubbing with more sophisticated container manipulation.
-  - This involves handling various metadata streams (video, audio, subtitles) and complex container structures (`moov` atoms in MP4/MOV, etc.).
-  - The goal is to remove data like creation date, GPS coordinates, and device information without re-encoding the video.
-  - **Current Status**: Server-side processing using Next.js API routes with `fast-video-metadata` library. Basic metadata extraction and scrubbing working. Full metadata removal requires more sophisticated video container manipulation.
-  - **Next Steps**: Implement advanced video container manipulation for complete metadata removal, add support for more video formats, and optimize performance for large video files.
+  - 🔄 **In Progress**: Upgrade video metadata support to extract and scrub all possible metadata, including custom/user fields (e.g., Title, Comments, Directors, Producers, Publisher, etc.) that ffmpeg/ffprobe may miss.
+  - **Upgrade Plan:**
+    1. **Research and Evaluate Tools:** Investigate libraries/tools (e.g., mp4box, AtomicParsley, Node.js MP4 parsers) for reading/writing arbitrary MP4 atoms and custom fields.
+    2. **Prototype Deep Metadata Extraction:** Build a script to extract all atoms/tags from a sample MP4, including custom/user fields. Compare with Windows Properties.
+    3. **Prototype Deep Metadata Scrubbing:** Attempt to remove or blank out custom/user fields using the chosen tool. Validate by re-checking in Windows Properties and with ffprobe.
+    4. **Integrate with App:** Add new extraction and scrubbing logic to the Next.js API endpoints. Update UI to show all detected fields and allow user selection for scrubbing.
+    5. **Testing and Validation:** Test with a variety of video files and metadata scenarios. Ensure no video/audio quality loss and that all metadata is removed as expected.
+    6. **Documentation and User Guidance:** Update documentation and UI to explain new capabilities and any limitations.
+  - **Goal:** Remove all metadata (including creation date, GPS, device info, and custom/user fields) without re-encoding, for as many video formats as possible.
+  - **Current Status:** Server-side processing using Next.js API routes with ExifTool. Full metadata extraction and scrubbing (including custom/user fields) is now supported for video files. ffmpeg/ffprobe is no longer used.
 
 ## Medium Priority
 
