@@ -2,7 +2,7 @@
 
 This document outlines the strategic roadmap and potential future features for the Metadata Scrubber application.
 
-## 🚀 Top Priority
+## Top Priority
 
 - **Add Video File Support**:
   - ✅ **Basic video file detection and UI support implemented**
@@ -17,7 +17,7 @@ This document outlines the strategic roadmap and potential future features for t
     5. **Testing and Validation:** Test with a variety of video files and metadata scenarios. Ensure no video/audio quality loss and that all metadata is removed as expected.
     6. **Documentation and User Guidance:** Update documentation and UI to explain new capabilities and any limitations.
   - **Goal:** Remove all metadata (including creation date, GPS, device info, and custom/user fields) without re-encoding, for as many video formats as possible.
-  - **Current Status:** Server-side processing using Next.js API routes with ffmpeg/ffprobe. Basic metadata extraction and scrubbing working. Full metadata removal (including custom/user fields) requires more advanced video container manipulation and/or new tools.
+  - **Current Status:** Server-side processing using Next.js API routes with ExifTool. Full metadata extraction and scrubbing (including custom/user fields) is now supported for video files. ffmpeg/ffprobe is no longer used.
 
 ## Medium Priority
 
