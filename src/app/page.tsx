@@ -61,11 +61,11 @@ export default function Home() {
                 </ul>
                 <p>
                   <strong>Why use Demeta?</strong> Demeta removes <em>all</em>{' '}
-                  metadata—including custom fields—from all major
-                  file types. For video files, Demeta uses advanced techniques
-                  to remove even the most deeply embedded metadata, without
-                  re-encoding or quality loss. Your privacy is protected with a
-                  thorough, easy-to-use, and modern tool.
+                  metadata, including custom fields, from all major file types.
+                  For video files, Demeta uses advanced techniques to remove even
+                  the most deeply embedded metadata, without re-encoding or
+                  quality loss. Your privacy is protected with a thorough,
+                  easy-to-use, and modern tool.
                 </p>
               </AccordionContent>
             </AccordionItem>
