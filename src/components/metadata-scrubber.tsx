@@ -74,6 +74,14 @@ export function MetadataScrubber() {
     setMetadata(null);
 
     try {
+      // Add file size validation
+      const maxFileSize = 100 * 1024 * 1024; // 100MB limit
+      if (selectedFile.size > maxFileSize) {
+        throw new Error(
+          `File size (${(selectedFile.size / 1024 / 1024).toFixed(1)}MB) exceeds the maximum allowed size of 100MB.`
+        );
+      }
+
       if (selectedFile.type.startsWith('image/')) {
         setFileType('image');
         await processImageFile(selectedFile);
@@ -249,29 +257,45 @@ export function MetadataScrubber() {
     await new Promise((resolve) => setTimeout(resolve, 250));
     setProgress(30);
 
-    const metadata = await music.parseBlob(selectedFile);
-    setProgress(70);
+    try {
+      const metadata = await music.parseBlob(selectedFile);
+      setProgress(70);
 
-    const extractedMetadata: Metadata = {};
-    if (metadata.common.title)
-      extractedMetadata['Title'] = metadata.common.title;
-    if (metadata.common.artist)
-      extractedMetadata['Artist'] = metadata.common.artist;
-    if (metadata.common.album)
-      extractedMetadata['Album'] = metadata.common.album;
-    if (metadata.common.year)
-      extractedMetadata['Year'] = metadata.common.year.toString();
-    if (metadata.common.track.no)
-      extractedMetadata['Track Number'] = metadata.common.track.no.toString();
-    if (metadata.common.genre)
-      extractedMetadata['Genre'] = metadata.common.genre.join(', ');
+      const extractedMetadata: Metadata = {};
+      if (metadata.common.title)
+        extractedMetadata['Title'] = metadata.common.title;
+      if (metadata.common.artist)
+        extractedMetadata['Artist'] = metadata.common.artist;
+      if (metadata.common.album)
+        extractedMetadata['Album'] = metadata.common.album;
+      if (metadata.common.year)
+        extractedMetadata['Year'] = metadata.common.year.toString();
+      if (metadata.common.track.no)
+        extractedMetadata['Track Number'] = metadata.common.track.no.toString();
+      if (metadata.common.genre)
+        extractedMetadata['Genre'] = metadata.common.genre.join(', ');
 
-    if (Object.keys(extractedMetadata).length === 0) {
-      extractedMetadata['Status'] = 'No readable metadata found in this file.';
+      if (Object.keys(extractedMetadata).length === 0) {
+        extractedMetadata['Status'] =
+          'No readable metadata found in this file.';
+      }
+
+      setMetadata(extractedMetadata);
+      setFieldsToScrub([]);
+    } catch (error) {
+      console.error('Error processing audio file:', error);
+
+      toast({
+        title: 'Audio Processing Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not process this audio file. It may be corrupted or unsupported.',
+        variant: 'destructive',
+      });
+
+      startOver();
     }
-
-    setMetadata(extractedMetadata);
-    setFieldsToScrub([]);
   };
 
   const processVideoFile = async (selectedFile: File) => {
@@ -309,24 +333,18 @@ export function MetadataScrubber() {
     } catch (error) {
       console.error('Error processing video file:', error);
 
-      // Fallback to basic file information if server processing fails
-      const extractedMetadata: Metadata = {};
-      extractedMetadata['File Name'] = selectedFile.name;
-      extractedMetadata['File Size'] =
-        `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
-      extractedMetadata['File Type'] = selectedFile.type;
-      extractedMetadata['Last Modified'] = new Date(
-        selectedFile.lastModified
-      ).toLocaleString();
-      extractedMetadata['Error'] =
-        'Server-side video metadata extraction failed';
-      extractedMetadata['Details'] =
-        error instanceof Error ? error.message : 'Unknown error';
-      extractedMetadata['Status'] =
-        'Basic file information available. Server processing failed.';
+      // Properly handle video processing errors
+      toast({
+        title: 'Video Processing Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not process this video file. It may be corrupted, unsupported, or too large.',
+        variant: 'destructive',
+      });
 
-      setMetadata(extractedMetadata);
-      setFieldsToScrub([]);
+      // Reset to upload step instead of showing misleading basic info
+      startOver();
     }
   };
 
@@ -787,7 +805,7 @@ const UploadStep: FC<{
                 or drag and drop
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports images, PDF, Office, and audio files
+                Supports images, PDF, Office, audio, and video files
               </p>
             </div>
             <Input
