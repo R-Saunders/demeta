@@ -24,6 +24,14 @@ export default function Home() {
 
         <MetadataScrubber />
 
+        <div className="w-full text-center my-8">
+          <div className="inline-block bg-muted/30 rounded-lg px-6 py-4 text-base text-muted-foreground shadow-sm">
+            <strong>Tip:</strong> Remove all background information (metadata)
+            from your files before uploading to social media or AI platforms.
+            Protect your privacy and control what you share!
+          </div>
+        </div>
+
         <div className="mt-12 mb-20">
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
@@ -62,8 +70,8 @@ export default function Home() {
                 <p>
                   <strong>Why use Demeta?</strong> Demeta removes <em>all</em>{' '}
                   metadata, including custom fields, from all major file types.
-                  For video files, Demeta uses advanced techniques to remove even
-                  the most deeply embedded metadata, without re-encoding or
+                  For video files, Demeta uses advanced techniques to remove
+                  even the most deeply embedded metadata, without re-encoding or
                   quality loss. Your privacy is protected with a thorough,
                   easy-to-use, and modern tool.
                 </p>
