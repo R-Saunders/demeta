@@ -6,16 +6,39 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Link from 'next/link';
+import Image from 'next/image';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Home() {
   return (
     <main className="flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
         <header className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline">
-            <Link href="/" className="transition-colors text-primary">
-              DeMeta
+          <h1 className="flex items-center justify-center gap-3">
+            <Link href="/" className="transition-opacity hover:opacity-80">
+              <Image
+                src="/demeta monogram dark.png"
+                alt="DeMeta Logo"
+                width={60}
+                height={60}
+                priority
+                className="h-auto hidden dark:block"
+              />
+              <Image
+                src="/demeta monogram light.png"
+                alt="DeMeta Logo"
+                width={60}
+                height={60}
+                priority
+                className="h-auto  dark:hidden"
+              />
             </Link>
+            <span className="text-4xl md:text-5xl font-bold font-headline text-primary">
+              DeMeta
+            </span>
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
             Demeta helps you decide what information leaves your device. Remove

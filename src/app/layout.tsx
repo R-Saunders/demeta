@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter as FontSans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
 
 import { cn } from '@/lib/utils';
 
@@ -22,24 +23,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
           fontSans.variable
         )}
       >
-        {children}
-        <footer className="w-full text-center py-8 px-4">
-          <p className="text-sm text-muted-foreground mt-4">
-            <strong>Your privacy is our priority:</strong> Most files are
-            processed locally in your browser. For video files, we temporarily
-            process them on our servers using ExifTool, but files are
-            automatically deleted immediately after processing and are never
-            stored permanently.
-          </p>
-        </footer>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <footer className="w-full text-center py-8 px-4">
+            <p className="text-sm text-muted-foreground mt-4">
+              <strong>Your privacy is our priority:</strong> Most files are
+              processed locally in your browser. For video files, we temporarily
+              process them on our servers using ExifTool, but files are
+              automatically deleted immediately after processing and are never
+              stored permanently.
+            </p>
+          </footer>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
