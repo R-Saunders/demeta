@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
           if (err) {
             return reject(err);
           }
+          if (!data || !data.format) {
+            return reject(new Error('No metadata found in video file'));
+          }
           return resolve(data);
         });
       }
@@ -47,34 +50,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    metadata.streams.forEach((stream, index) => {
-      const prefix = stream.codec_type === 'video' ? 'Video' : 'Audio';
-      if (stream.codec_name)
-        extractedMetadata[`${prefix} Codec`] = stream.codec_name;
+    if (metadata.streams && metadata.streams.length > 0) {
+      metadata.streams.forEach((stream, index) => {
+        const prefix = stream.codec_type === 'video' ? 'Video' : 'Audio';
+        if (stream.codec_name)
+          extractedMetadata[`${prefix} Codec`] = stream.codec_name;
 
-      if (stream.codec_type === 'video') {
-        if (stream.width && stream.height)
-          extractedMetadata[`${prefix} Dimensions`] =
-            `${stream.width}x${stream.height}`;
-        if (stream.r_frame_rate)
-          extractedMetadata[`${prefix} Frame Rate`] = stream.r_frame_rate;
-        if (stream.bit_rate)
-          extractedMetadata[`${prefix} Bitrate`] =
-            `${Math.round(parseInt(String(stream.bit_rate)) / 1000)} kbps`;
-      }
-      if (stream.codec_type === 'audio') {
-        if (stream.sample_rate)
-          extractedMetadata[`${prefix} Sample Rate`] =
-            `${parseInt(String(stream.sample_rate)) / 1000} kHz`;
-        if (stream.channels)
-          extractedMetadata[`${prefix} Channels`] = stream.channels;
-        if (stream.channel_layout)
-          extractedMetadata[`${prefix} Channel Layout`] = stream.channel_layout;
-        if (stream.bit_rate)
-          extractedMetadata[`${prefix} Bitrate`] =
-            `${Math.round(parseInt(String(stream.bit_rate)) / 1000)} kbps`;
-      }
-    });
+        if (stream.codec_type === 'video') {
+          if (stream.width && stream.height)
+            extractedMetadata[`${prefix} Dimensions`] =
+              `${stream.width}x${stream.height}`;
+          if (stream.r_frame_rate)
+            extractedMetadata[`${prefix} Frame Rate`] = stream.r_frame_rate;
+          if (stream.bit_rate)
+            extractedMetadata[`${prefix} Bitrate`] =
+              `${Math.round(parseInt(String(stream.bit_rate)) / 1000)} kbps`;
+        }
+        if (stream.codec_type === 'audio') {
+          if (stream.sample_rate)
+            extractedMetadata[`${prefix} Sample Rate`] =
+              `${parseInt(String(stream.sample_rate)) / 1000} kHz`;
+          if (stream.channels)
+            extractedMetadata[`${prefix} Channels`] = stream.channels;
+          if (stream.channel_layout)
+            extractedMetadata[`${prefix} Channel Layout`] =
+              stream.channel_layout;
+          if (stream.bit_rate)
+            extractedMetadata[`${prefix} Bitrate`] =
+              `${Math.round(parseInt(String(stream.bit_rate)) / 1000)} kbps`;
+        }
+      });
+    }
 
     if (metadata.format.duration) {
       extractedMetadata['Duration'] = new Date(
@@ -82,6 +88,18 @@ export async function POST(request: NextRequest) {
       )
         .toISOString()
         .substr(11, 8);
+    }
+
+    // Add basic file information
+    extractedMetadata['File Name'] = file.name;
+    extractedMetadata['File Size'] =
+      `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    extractedMetadata['File Type'] = file.type;
+
+    if (Object.keys(extractedMetadata).length <= 3) {
+      // Only basic info
+      extractedMetadata['Status'] =
+        'No readable metadata found in this video file.';
     }
 
     return NextResponse.json({
