@@ -11,8 +11,9 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: 'Create Next App',
-  description: 'Scrub metadata from files to protect your privacy.',
+  title: 'DeMeta: Your Privacy Protector',
+  description:
+    'Remove metadata from files to protect your privacy. Protect your privacy and control what you share!',
 };
 
 export default function RootLayout({
@@ -29,6 +30,15 @@ export default function RootLayout({
         )}
       >
         {children}
+        <footer className="w-full text-center py-8 px-4">
+          <p className="text-sm text-muted-foreground mt-4">
+            <strong>Your privacy is our priority:</strong> Most files are
+            processed locally in your browser. For video files, we temporarily
+            process them on our servers using ExifTool, but files are
+            automatically deleted immediately after processing and are never
+            stored permanently.
+          </p>
+        </footer>
         <Toaster />
       </body>
     </html>

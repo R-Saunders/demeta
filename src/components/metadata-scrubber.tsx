@@ -775,8 +775,9 @@ const UploadStep: FC<{
           <FileUp className="text-primary" /> 1. Upload Your File
         </CardTitle>
         <CardDescription>
-          Select a file from your device. We&apos;ll extract the metadata for
-          you to review.
+          Drag and drop a file to see the invisible data attached to it from
+          location, device details, and more. We&apos;ll show you what social
+          media and AI platforms see, so you can remove it.
         </CardDescription>
       </CardHeader>
       <CardContent>

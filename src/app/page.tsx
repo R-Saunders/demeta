@@ -14,11 +14,13 @@ export default function Home() {
         <header className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">
             <Link href="/" className="transition-colors text-primary">
-              Demeta
+              DeMeta
             </Link>
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            Protect your privacy by removing metadata from your files.
+            Demeta helps you decide what information leaves your device. Remove
+            hidden metadata before you upload to social media, AI platforms, or
+            anywhere else.
           </p>
         </header>
 
@@ -26,9 +28,9 @@ export default function Home() {
 
         <div className="w-full text-center my-8">
           <div className="inline-block bg-muted/30 rounded-lg px-6 py-4 text-base text-muted-foreground shadow-sm">
-            <strong>Tip:</strong> Remove all background information (metadata)
-            from your files before uploading to social media or AI platforms.
-            Protect your privacy and control what you share!
+            <strong>Pro Tip:</strong> When you upload a file, you&apos;re also
+            sharing a trove of invisible data. Before sharing on social media or
+            using with AI, a quick clean ensures your privacy remains intact.
           </div>
         </div>
 
@@ -36,14 +38,14 @@ export default function Home() {
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
               <AccordionTrigger className="text-xl font-headline">
-                Why should I remove metadata?
+                Take Control of Your Digital Footprint
               </AccordionTrigger>
               <AccordionContent className="text-base text-muted-foreground space-y-4 pt-4">
                 <p>
-                  Many of the files you create and share contain hidden
-                  information called metadata. While this data can be useful, it
-                  often includes sensitive details you might not want to share
-                  publicly.
+                  Every photo you take, every document you create, and every
+                  video you record contains hidden information called metadata.
+                  While this data can be useful, it often includes sensitive
+                  details you might not want to share publicly.
                 </p>
                 <ul className="list-disc pl-5 space-y-2">
                   <li>
@@ -67,17 +69,57 @@ export default function Home() {
                     may reveal more than you intend.
                   </li>
                 </ul>
+                <h3 className="text-xl font-bold font-headline">
+                  Why does this matter?
+                </h3>
                 <p>
-                  <strong>Why use Demeta?</strong> Demeta removes <em>all</em>{' '}
-                  metadata, including custom fields, from all major file types.
-                  For video files, Demeta uses advanced techniques to remove
-                  even the most deeply embedded metadata, without re-encoding or
-                  quality loss. Your privacy is protected with a thorough,
-                  easy-to-use, and modern tool.
+                  When you upload files to social media, cloud storage, or AI
+                  platforms, this metadata is often collected and analyzed. It
+                  can be used to build a detailed profile of your habits, your
+                  location history, and your personal life.
+                  <br />
+                  By removing metadata, you&apos;re not just deleting data;
+                  you&apos;re taking a crucial step in digital privacy. You are
+                  ensuring that the file you share is just the file, nothing
+                  more. It allows you to interact with the digital world on your
+                  own terms.
                 </p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
+              <AccordionTrigger className="text-xl font-headline">
+                Who sees my metadata?
+              </AccordionTrigger>
+              <AccordionContent className="text-base text-muted-foreground space-y-4 pt-4">
+                <p>
+                  Potentially, anyone who has access to your original file. More
+                  specifically, the platforms we use every day are designed to
+                  read it:
+                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    <strong>Social Media Platforms:</strong> Use it to better
+                    understand their users&apos; behavior and locations, which
+                    can be used for targeted advertising and content algorithms.
+                  </li>
+                  <li>
+                    <strong>AI and Machine Learning Models:</strong> Are often
+                    trained on vast datasets of publicly available files.
+                    Removing metadata from your images or documents prevents
+                    your personal data from becoming part of this training data.
+                  </li>
+                  <li>
+                    <strong>Online Forums & Image Boards:</strong> Can expose
+                    your data to a wide, anonymous audience if not removed.
+                  </li>
+                </ul>
+                <p>
+                  Demeta allows you to wipe this information before it ever
+                  leaves your computer.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-3">
               <AccordionTrigger className="text-xl font-headline">
                 What file types are supported?
               </AccordionTrigger>
