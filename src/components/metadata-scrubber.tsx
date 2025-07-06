@@ -870,25 +870,29 @@ const ReviewStep: FC<{
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg max-h-96 overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
-              <TableRow>
-                <TableHead className="w-[50px]">
-                  <Checkbox
-                    checked={isIndeterminate ? 'indeterminate' : allSelected}
-                    onCheckedChange={(checked) => onSelectAll(!!checked)}
-                    aria-label="Select all"
-                  />
-                </TableHead>
-                <TableHead>Field</TableHead>
-                <TableHead>Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(metadata).map(([key, value]) => (
-                <TableRow key={key}>
-                  <TableCell>
+        <div className="max-h-96 overflow-y-auto relative border rounded-lg bg-card">
+          <table className="min-w-full table-fixed">
+            <thead>
+              <tr className="sticky top-0 bg-muted/70 backdrop-blur-sm z-10">
+                <th className="w-[50px] sticky top-0 bg-muted/70 z-20 px-6 py-4 rounded-tl-lg align-top"></th>
+                <th className="w-1/4 max-w-xs sticky top-0 bg-muted/70 z-20 px-6 py-4 align-top text-base">
+                  Field
+                </th>
+                <th className="w-3/4 max-w-lg sticky top-0 bg-muted/70 z-20 px-6 py-4 rounded-tr-lg align-top text-base">
+                  Value
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(metadata).map(([key, value], idx, arr) => (
+                <tr
+                  key={key}
+                  className={
+                    'border-b last:border-0' +
+                    (idx === arr.length - 1 ? ' rounded-b-lg' : '')
+                  }
+                >
+                  <td className="px-6 py-4 align-top">
                     <Checkbox
                       checked={fieldsToScrub.includes(key)}
                       onCheckedChange={(checked) =>
@@ -896,15 +900,17 @@ const ReviewStep: FC<{
                       }
                       aria-label={`Select ${key}`}
                     />
-                  </TableCell>
-                  <TableCell className="font-medium">{key}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  </td>
+                  <td className="font-medium break-words px-6 py-4 align-top max-w-xs text-base">
+                    {key}
+                  </td>
+                  <td className="text-muted-foreground break-words whitespace-pre-line px-6 py-4 align-top max-w-lg text-base">
                     {value}
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-2 mt-4">

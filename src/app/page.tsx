@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -12,7 +13,12 @@ export default function Home() {
       <div className="w-full max-w-4xl mx-auto">
         <header className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">
-            Metadata Scrubber
+            <Link
+              href="/"
+              className="transition-colors text-primary"
+            >
+              Demeta
+            </Link>
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
             Protect your privacy by removing metadata from your files.
