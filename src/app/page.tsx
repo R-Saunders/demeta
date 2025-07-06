@@ -53,7 +53,20 @@ export default function Home() {
                     contain artist names, album titles, and even the software
                     used for editing, which could link back to you.
                   </li>
+                  <li>
+                    <strong>Video Files:</strong> Videos can contain device
+                    information, GPS location, creator details, and tags that
+                    may reveal more than you intend.
+                  </li>
                 </ul>
+                <p>
+                  <strong>Why use Demeta?</strong> Demeta removes <em>all</em>{' '}
+                  metadata—including custom fields—from all major
+                  file types. For video files, Demeta uses advanced techniques
+                  to remove even the most deeply embedded metadata, without
+                  re-encoding or quality loss. Your privacy is protected with a
+                  thorough, easy-to-use, and modern tool.
+                </p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
@@ -102,8 +115,10 @@ export default function Home() {
                       <li>MKV (.mkv)</li>
                       <li>AVI (.avi)</li>
                       <li>WebM (.webm)</li>
-                      <li>Coming Soon!</li>
                     </ul>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      All major video formats are fully supported.
+                    </p>
                   </div>
                 </div>
               </AccordionContent>
