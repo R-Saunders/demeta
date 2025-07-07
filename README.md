@@ -28,7 +28,7 @@ Before running this application, make sure you have the following installed:
 
 ```bash
 git clone git@github.com:R-Saunders/demeta.git
-cd metadata-scrubber
+cd demeta
 ```
 
 ### 2. Install dependencies
