@@ -275,3 +275,5 @@ By contributing to DeMeta, you agree that your contributions will be licensed un
 **Thank you for contributing to DeMeta!** 🎉
 
 Your contributions help make digital privacy more accessible to everyone.
+
+**Note:** While this project uses npm in examples, you can use yarn or pnpm instead. Just ensure you're using Node.js 20 as specified in .nvmrc.
