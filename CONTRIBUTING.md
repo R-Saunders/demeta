@@ -174,9 +174,11 @@ git commit -m "fix: resolve bug description"
 
 - `feat:` for new features
 - `fix:` for bug fixes
-- `style:` for formatting changes
+- `docs:` for documentation changes
+- `style:` for code formatting changes (spacing, semicolons, etc.)
 - `refactor:` for code refactoring
 - `test:` for adding tests
+- `chore:` for maintenance tasks (dependencies, build tools, etc.)
 
 ### 6. Push and Create Pull Request
 
