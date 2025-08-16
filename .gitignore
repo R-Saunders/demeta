@@ -118,5 +118,6 @@ jspm_packages/
 # Additional files to ignore
 .idx/
 .modified
+TODO.md
 
 vercel.json
