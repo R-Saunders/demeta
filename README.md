@@ -1,147 +1,122 @@
-# MetadataScrub
+# DeMeta 🔒
 
-A Next.js application that helps you protect your privacy by removing metadata from image files. Upload your images, review the metadata, and download a clean version with sensitive information removed.
+> **Remove metadata from your files to protect your privacy**
 
-## Features
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Demeta.vercel.app-blue?style=for-the-badge&logo=vercel)](https://demeta.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- Upload and analyze image files for metadata
-- Review and select which metadata fields to remove
-- Download cleaned images with metadata scrubbed
-- Modern, responsive UI built with Tailwind CSS and Radix UI
-- Support for various image formats
-- **PDFs**: Scrubs common metadata fields like Author, Creator, and modification dates.
-- **Modern Office Documents**: Handles `.docx`, `.xlsx`, and `.pptx` files, removing core properties like author and company, and resetting revision numbers.
-- **Audio Files**: Reads metadata from common audio formats and scrubs ID3 tags from `.mp3` files.
-- **Video Files**: Extracts and scrubs all metadata (including custom/user fields and Windows "Details") from MP4/MOV files using ExifTool on the server. No longer uses ffmpeg.
+**DeMeta helps you decide what information leaves your device.** Upload files, review hidden metadata, and download clean versions with sensitive information removed.
 
-## Prerequisites
+## 🚀 [Try It Now → demeta.vercel.app](https://demeta.vercel.app)
 
-Before running this application, make sure you have the following installed:
+---
 
-- **Node.js** (version 18 or higher)
-- **npm** or **yarn** package manager
-- **ExifTool** (must be available in your system PATH; install with `sudo apt-get install libimage-exiftool-perl` on Ubuntu/WSL2)
+## Why DeMeta?
 
-## Development Setup
+Every file you create contains hidden information called **metadata** - dates, locations, device details, author names, and more. When you share files online, this data can reveal more about you than you intend.
 
-### 1. Clone the repository
+**DeMeta gives you control over your digital footprint.**
 
-```bash
-git clone git@github.com:R-Saunders/demeta.git
-cd demeta
-```
+### 🔥 Key Features
 
-### 2. Install dependencies
+- **🛡️ Privacy-First**: Most processing happens locally in your browser
+- **📁 Comprehensive**: Supports images, documents, audio, and video files
+- **🗑️ Zero Storage**: Files are never stored on our servers
+- **🔓 Open Source**: Transparent, auditable code
+- **💚 Free Forever**: No hidden costs or premium tiers
 
-```bash
-npm install
-# or
-yarn install
-```
+---
 
-### 3. Run the development server
+## 📁 What Files Can You Clean?
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+| Category           | Formats                          | Status          |
+| ------------------ | -------------------------------- | --------------- |
+| **🖼️ Images**      | JPEG, PNG, TIFF, HEIC, WebP, GIF | ✅ Full Support |
+| **📄 Documents**   | PDF, DOCX, XLSX, PPTX            | ✅ Full Support |
+| **🎵 Audio**       | MP3, FLAC, WAV                   | ✅ Full Support |
+| **🎬 Video**       | MP4, MOV, MKV, AVI, WebM         | ✅ Full Support |
+| **🍎 Apple iWork** | .pages, .numbers, .key           | 🚧 Coming Soon  |
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
+---
 
-### 4. Open your browser
+## Perfect For
 
-Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
+- **📰 Journalists** protecting sources and maintaining anonymity
+- **✊ Activists** and organizers staying safe online
+- **🎨 Content Creators** sharing work without revealing personal details
+- **🔒 Privacy-Conscious Users** controlling what data they share
+- **💼 Professionals** sharing documents without company metadata
+- **📱 Social Media Users** posting photos without location data
 
-## Available Scripts
-
-- `npm run dev` - Start the development server
-- `npm run build` - Build the application for production
-- `npm run start` - Start the production server
-- `npm run lint` - Run ESLint to check code quality
-- `npm run typecheck` - Run TypeScript type checking
-
-## Project Structure
-
-```zsh
-src/
-├── app/                 # Next.js app directory
-│   ├── layout.tsx      # Root layout component
-│   └── page.tsx        # Home page
-├── components/         # React components
-│   ├── metadata-scrubber.tsx  # Main application component
-│   └── ui/            # Reusable UI components
-├── hooks/             # Custom React hooks
-└── lib/               # Utility functions
-```
-
-## Technology Stack
-
-- **Next.js 14** - React framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **Radix UI** - Accessible UI components
-- **ExifReader** - Image metadata extraction
-- **Lucide React** - Icons
-
-## Development Notes
-
-- The application uses TypeScript for type safety
-- ESLint and TypeScript errors are ignored during builds for development convenience
-- The app supports remote images from placehold.co for development purposes
-- All UI components are built with accessibility in mind using Radix UI primitives
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
+---
 
 ## How It Works
 
-The application uses a combination of client-side and server-side libraries to process your files:
+1. **📤 Upload** any supported file
+2. **🔍 Review** the metadata found (dates, locations, device info, etc.)
+3. **🧹 Clean** by removing sensitive information
+4. **⬇️ Download** your privacy-safe file
 
-1. **Image Metadata**: Uses a simple method of re-rendering the image on a canvas, which naturally strips all EXIF data.
-2. **PDF Metadata**: Utilizes the `pdf-lib` library to parse the document, remove specific metadata keys, and then save the cleaned file.
-3. **Office Metadata**: Leverages `jszip` to unzip the Office document package, parses the `core.xml` and `app.xml` files with `fast-xml-parser`, surgically removes metadata tags with regex, and then re-zips the package.
-4. **Audio Metadata**: Uses `music-metadata` to read ID3 and other tags. For scrubbing, it manually identifies and removes the ID3 v1 and v2 data blocks from the file buffer of MP3s.
-5. **Video Metadata**: Uses ExifTool server-side to extract and scrub all metadata, including custom/user fields and Windows-specific tags. This is the most thorough method available for video files.
+**No account required. No data stored. No hidden costs.**
 
-## Setup & Run Locally
+---
 
-To get started with the Metadata Scrubber locally, follow these steps:
+## Your Privacy Matters
 
-1. Clone the repository:
+- **🔒 Local Processing**: Most files never leave your device
+- **⏰ Temporary Server Processing**: Videos processed server-side are deleted immediately
+- **📊 No Logging**: We don't track what you upload or process
+- **🔍 Open Source**: Code is auditable and transparent
+- **🌐 No Tracking**: We don't use cookies or analytics to follow you
 
-```bash
-git clone <repository-url>
-cd metadata-scrubber
-```
+---
 
-2. Install dependencies:
+## Built With Modern Tech
 
-```bash
-npm install
-# or
-yarn install
-```
+- **Frontend**: Next.js 14, TypeScript
+- **Styling**: Tailwind CSS, Radix UI
+- **Processing**: ExifTool, pdf-lib, music-metadata
+- **Deployment**: Vercel
 
-3. Run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+## What's Coming Next
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
+See our [ROADMAP.md](ROADMAP.md) for detailed development plans, including:
 
-4. Open your browser:
+- Apple iWork document support
+- More audio formats
+- Batch processing
+- Selective metadata removal
+- GPS data visualization
 
-Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
+---
+
+## Contributing
+
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for development setup and guidelines.
+
+**Quick ways to help:**
+
+- 🐛 Report bugs
+- 💡 Suggest features
+- 📝 Improve documentation
+- 🔧 Submit pull requests
+
+---
+
+## Connect & Stay Updated
+
+- **🌐 Live Demo**: [demeta.vercel.app](https://demeta.vercel.app)
+- **🐛 Issues**: [GitHub Issues](https://github.com/R-Saunders/demeta/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/R-Saunders/demeta/discussions)
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Ready to take control of your digital privacy?** [Try DeMeta now →](https://demeta.vercel.app)
