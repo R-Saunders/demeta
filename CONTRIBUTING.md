@@ -8,18 +8,34 @@ Thank you for your interest in contributing to DeMeta! This document will help y
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js** (version 18 or higher)
+- **Node.js** (version 20 or higher)
 - **npm** or **yarn** package manager
 - **ExifTool** (for video processing)
 
+### Node.js Version Management
+
+This project uses Node.js 20. You can manage this with:
+
+**Option 1: nvm (recommended)**
+
+```bash
+nvm use  # Automatically uses .nvmrc version
+```
+
+**Option 2: Manual installation**
+Download Node.js 20 from [nodejs.org](https://nodejs.org/)
+
+**Option 3: Other managers**
+
+- `n use` (n manager)
+- `fnm use` (fnm manager)
+
 ### Installation
 
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/R-Saunders/demeta.git
-   cd demeta
-   ```
+```bash
+git clone https://github.com/R-Saunders/demeta.git
+cd demeta
+```
 
 2. **Install dependencies**
 
